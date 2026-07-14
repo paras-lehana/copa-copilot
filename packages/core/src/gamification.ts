@@ -227,6 +227,7 @@ export function validateCompletion(claim: CompletionClaim): Result<CompletionAwa
 export const MAX_RESTORABLE_POINTS = 2000;
 
 export function clampRestoredPoints(claimed: number): number {
-  if (!Number.isFinite(claimed) || claimed < 0) return 0;
+  // `<= 0` also normalizes -0 to a clean 0.
+  if (!Number.isFinite(claimed) || claimed <= 0) return 0;
   return Math.min(Math.round(claimed), MAX_RESTORABLE_POINTS);
 }
