@@ -1,0 +1,290 @@
+openapi: 3.1.0
+info:
+  title: Copa Copilot API
+  version: 0.2.0
+  description: >
+    GenAI operations & fan copilot for the FIFA World Cup 2026. All responses are
+    validated by shared zod schemas; failures use the envelope
+    { "error": { "code", "message" } } and never echo raw input. AI inference is
+    routed through the llm-service proxy (Gemini gemini-3-flash), never a direct
+    provider call.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://copa-copilot-api-767171449038.us-central1.run.app
+    description: Production (Cloud Run, us-central1)
+  - url: http://localhost:8080
+    description: Local dev
+
+components:
+  parameters:
+    VenueId:
+      name: venueId
+      in: path
+      required: true
+      schema: { type: string, example: metlife }
+    Scenario:
+      name: scenario
+      in: query
+      schema:
+        type: string
+        enum: [normal, gate-bottleneck, egress-surge, weather-hold]
+        default: normal
+    Minute:
+      name: minute
+      in: query
+      schema: { type: integer, minimum: -240, maximum: 240, default: 30 }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: NOT_FOUND }
+            message: { type: string }
+    ZoneCrowd:
+      type: object
+      properties:
+        zoneId: { type: string }
+        name: { type: string }
+        kind: { type: string }
+        densityPct: { type: number }
+        status: { type: string, enum: [comfortable, busy, critical] }
+        queueMinutes: { type: number }
+  responses:
+    NotFound:
+      description: Unknown resource
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationFailed:
+      description: Request failed schema validation (no raw input echoed)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+paths:
+  /api/health:
+    get:
+      summary: Liveness probe
+      responses:
+        '200': { description: OK }
+  /api/meta:
+    get:
+      summary: Service metadata (version only; no demo/config flags)
+      responses:
+        '200': { description: Service name, version, uptime }
+  /api/venues:
+    get:
+      summary: List all 16 World Cup 2026 venues
+      responses:
+        '200': { description: Venue list }
+  /api/venues/{venueId}:
+    get:
+      summary: One venue and its navigation graph
+      parameters: [{ $ref: '#/components/parameters/VenueId' }]
+      responses:
+        '200': { description: Venue + zones + edges }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/crowd/{venueId}:
+    get:
+      summary: Deterministic live crowd snapshot
+      parameters:
+        - { $ref: '#/components/parameters/VenueId' }
+        - { $ref: '#/components/parameters/Scenario' }
+        - { $ref: '#/components/parameters/Minute' }
+      responses:
+        '200':
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshot:
+                    type: object
+                    properties:
+                      zones: { type: array, items: { $ref: '#/components/schemas/ZoneCrowd' } }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/transit/{venueId}:
+    get:
+      summary: Transit-link loads
+      parameters:
+        - { $ref: '#/components/parameters/VenueId' }
+        - { $ref: '#/components/parameters/Scenario' }
+        - { $ref: '#/components/parameters/Minute' }
+      responses:
+        '200': { description: Transit loads }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/routing/recommend:
+    post:
+      summary: Crowd- and accessibility-aware safest route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [venueId, fromZoneId, toZoneId]
+              properties:
+                venueId: { type: string }
+                fromZoneId: { type: string }
+                toZoneId: { type: string }
+                profile: { type: string, enum: [none, wheelchair, low-vision, sensory-sensitive] }
+                scenario: { type: string }
+                minute: { type: integer }
+      responses:
+        '200': { description: RouteRecommendation }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: No safe route available }
+  /api/egress/advice:
+    post:
+      summary: Exit-wave departure advice (anti-MetLife)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [venueId, mode]
+              properties:
+                venueId: { type: string }
+                mode: { type: string, enum: [rail, bus, rideshare, walk] }
+                scenario: { type: string }
+      responses:
+        '200': { description: EgressAdvice }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/egress/stagger/{venueId}:
+    get:
+      summary: Organizer staggered-egress plan
+      parameters: [{ $ref: '#/components/parameters/VenueId' }]
+      responses:
+        '200': { description: Stagger slots }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/weather/{venueId}:
+    get:
+      summary: Weather-protocol state + per-persona actions
+      parameters:
+        - { $ref: '#/components/parameters/VenueId' }
+        - name: preset
+          in: query
+          schema: { type: string, enum: [clear-day, philadelphia-lightning, heat-dome, passing-storm] }
+        - { $ref: '#/components/parameters/Minute' }
+      responses:
+        '200': { description: WeatherProtocol }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/entry/assess:
+    post:
+      summary: Entry-readiness / ghost-ticket assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [venueId, ticketSource, transferConfirmed, idPacked, bagCompliant]
+              properties:
+                venueId: { type: string }
+                ticketSource: { type: string, enum: [official, official-resale, third-party] }
+                transferConfirmed: { type: boolean }
+                idPacked: { type: boolean }
+                bagCompliant: { type: boolean }
+      responses:
+        '200': { description: EntryReadiness }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+  /api/incidents:
+    post:
+      summary: Report an incident
+      responses:
+        '201': { description: Created incident }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+  /api/incidents/{venueId}:
+    get:
+      summary: Triage-ordered incident queue
+      parameters: [{ $ref: '#/components/parameters/VenueId' }]
+      responses:
+        '200': { description: Incident queue }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/incidents/{incidentId}/advance:
+    patch:
+      summary: Advance an incident along its lifecycle
+      parameters: [{ name: incidentId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Advanced incident }
+        '400': { description: Already resolved }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/assistant/query:
+    post:
+      summary: Grounded GenAI assistant (rate-limited 10/min/IP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, venueId]
+              properties:
+                message: { type: string, maxLength: 1000 }
+                venueId: { type: string }
+                persona: { type: string, enum: [fan, volunteer, organizer, staff] }
+                language: { type: string }
+                literacyTier: { type: string, enum: [standard, easy, audioFirst] }
+      responses:
+        '200': { description: Assistant reply with tool traces + engine label }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: Rate limited }
+  /api/ops/briefing:
+    post:
+      summary: AI operations briefing (per-window TTL cache)
+      responses:
+        '200': { description: Briefing }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+  /api/users/bootstrap:
+    post:
+      summary: Create an anonymous (no-PII) profile; clamps restored points
+      responses:
+        '201': { description: Profile }
+        '400': { $ref: '#/components/responses/ValidationFailed' }
+  /api/users/{userId}:
+    get:
+      summary: Fetch a profile
+      parameters: [{ name: userId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Profile }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/missions:
+    get:
+      summary: Mission catalog
+      responses:
+        '200': { description: Missions }
+  /api/missions/complete:
+    post:
+      summary: Validate a mission completion and award engine-computed points
+      responses:
+        '200': { description: Award + updated profile }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { description: Mission rejected }
+  /api/leaderboard:
+    get:
+      summary: Section / venue / tournament leaderboard
+      parameters:
+        - name: scope
+          in: query
+          schema: { type: string, enum: [section, venue, tournament], default: venue }
+        - name: venueId
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: Ranked page + greenest sections }
+  /api/google/services:
+    get:
+      summary: Evidence-as-code Google service catalog (env var names only)
+      responses:
+        '200': { description: Scorecard + services + runtime readiness }

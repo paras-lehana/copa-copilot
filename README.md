@@ -153,4 +153,4 @@ The tracked tree contains only source, tests, configuration, rubric-evidence doc
 
 ## 🧭 For evaluators
 
-Start with [EVALUATION_MAPPING.md](EVALUATION_MAPPING.md) — it maps every rubric axis to the exact files, tests and docs that satisfy it. Then open the live web URL, tap **"Get my exit advice"** on the dashboard and ask the assistant *"wheelchair route to my seat"* — both answers quote live engine numbers.
+Start with [EVALUATION_MAPPING.md](EVALUATION_MAPPING.md) — it maps every rubric axis to the exact files, tests and docs that satisfy it. The API contract is in [openapi.yaml](openapi.yaml); repo hygiene is stated in [SUBMISSION_ARTIFACTS.md](SUBMISSION_ARTIFACTS.md). Then open the live web URL, tap **"Get my exit advice"** on the dashboard and ask the assistant *"wheelchair route to my seat"* — both answers quote live engine numbers (the reply is real Gemini via llm-service, `engine: "gemini"`).

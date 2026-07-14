@@ -5,7 +5,7 @@
 ## Code Quality
 | Evidence in code | Tests | Docs |
 |---|---|---|
-| TypeScript strict + `noUncheckedIndexedAccess` ([tsconfig.base.json](tsconfig.base.json)); `Result<T,AppError>` ([packages/core/src/result.ts](packages/core/src/result.ts), [errors.ts](packages/core/src/errors.ts)); one zod source ([schemas.ts](packages/core/src/schemas.ts)); ESLint over every workspace ([eslint.config.mjs](eslint.config.mjs)); grep-census script ([scripts/grep-census.ps1](scripts/grep-census.ps1)) | `result.test.ts`, `errors.test.ts`, `schemas.test.ts` (54 cases) | README "Code quality"; this file |
+| TypeScript strict + `noUncheckedIndexedAccess` ([tsconfig.base.json](tsconfig.base.json)); `Result<T,AppError>` ([packages/core/src/result.ts](packages/core/src/result.ts), [errors.ts](packages/core/src/errors.ts)); one zod source ([schemas.ts](packages/core/src/schemas.ts)); ESLint over every workspace ([eslint.config.mjs](eslint.config.mjs)); grep-census script ([scripts/grep-census.ps1](scripts/grep-census.ps1)); OpenAPI 3.1 contract ([openapi.yaml](openapi.yaml)); LICENSE + CONTRIBUTING | `result.test.ts`, `errors.test.ts`, `schemas.test.ts`, `boundaries.test.ts` | README "Code quality"; this file |
 | No duplicated logic (web imports core schemas & types); constants-as-data (`Record<Union,Config>`) throughout the engine | schema invariant tests | ARCHITECTURE.md |
 
 ## Security
