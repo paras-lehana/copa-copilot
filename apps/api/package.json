@@ -1,0 +1,27 @@
+{
+  "name": "@copa/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Copa Copilot API — Express on Cloud Run: crowd, routing, egress, weather, incidents, assistant, missions, evidence endpoints.",
+  "license": "MIT",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node --transpile-only src/main.ts",
+    "start": "node dist/main.js",
+    "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@copa/core": "*",
+    "express": "^4.21.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "ts-node": "^10.9.2"
+  }
+}

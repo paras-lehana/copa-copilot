@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Copa Copilot — GenAI operations and fan copilot for FIFA World Cup 2026. Launching for PromptWars Challenge 4.">
+<title>Copa Copilot — GenAI Stadium Copilot for FIFA World Cup 2026</title>
+<style>
+  :root {
+    --bg-0: #0b1220; --bg-1: #101a30;
+    --teal: #32b8c6; --gold: #e8c15a;
+    --text: #eef2f7; --text-dim: #9fb0c3;
+    --glass: rgba(255, 255, 255, 0.06); --glass-edge: rgba(255, 255, 255, 0.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh; display: grid; place-items: center;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--text); padding: 24px;
+    background: radial-gradient(1200px 700px at 15% -10%, #16324f 0%, transparent 55%),
+                radial-gradient(900px 600px at 110% 110%, #14343a 0%, transparent 55%),
+                linear-gradient(160deg, var(--bg-0), var(--bg-1));
+  }
+  main {
+    max-width: 680px; width: 100%; text-align: center;
+    background: var(--glass); border: 1px solid var(--glass-edge);
+    border-radius: 20px; padding: 48px 32px;
+    backdrop-filter: blur(12px); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+  .ball { font-size: 56px; display: block; }
+  @media (prefers-reduced-motion: no-preference) {
+    .ball { animation: bounce 2.4s ease-in-out infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+  }
+  h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: 0.5px; margin: 14px 0 6px; }
+  h1 .copa { color: var(--gold); } h1 .pilot { color: var(--teal); }
+  .tagline { color: var(--text-dim); font-size: clamp(15px, 2.6vw, 18px); line-height: 1.55; max-width: 52ch; margin: 0 auto; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 28px 0 10px; }
+  .chip {
+    border: 1px solid var(--glass-edge); border-radius: 999px;
+    padding: 8px 16px; font-size: 13.5px; color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+  .live .dot { background: #4ade80; } .soon .dot { background: var(--gold); }
+  footer { margin-top: 26px; color: var(--text-dim); font-size: 13px; line-height: 1.6; }
+  footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <span class="ball" aria-hidden="true">⚽</span>
+  <h1><span class="copa">Copa</span> <span class="pilot">Copilot</span></h1>
+  <p class="tagline">
+    A GenAI operations &amp; fan copilot for the FIFA World Cup 2026 — crowd-aware routing,
+    exit-wave advice, weather protocols, multilingual assistance and live operational
+    intelligence across all 16 stadiums.
+  </p>
+  <div class="chips" role="list" aria-label="Service status">
+    <span class="chip live" role="listitem"><span class="dot" aria-hidden="true"></span>Cloud Run: live</span>
+    <span class="chip live" role="listitem"><span class="dot" aria-hidden="true"></span>URL: claimed &amp; permanent</span>
+    <span class="chip soon" role="listitem"><span class="dot" aria-hidden="true"></span>Full app: deploying July 2026</span>
+  </div>
+  <footer>
+    Built for <strong>PromptWars Virtual — Challenge 4: Smart Stadiums &amp; Tournament Operations</strong><br>
+    Google Cloud Run · Gemini · us-central1
+  </footer>
+</main>
+</body>
+</html>

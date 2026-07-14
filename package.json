@@ -1,0 +1,46 @@
+{
+  "name": "copa-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Copa Copilot — GenAI operations & fan copilot for FIFA World Cup 2026 stadiums (PromptWars Challenge 4)",
+  "license": "MIT",
+  "author": "Paras Lehana",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/core",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:core": "npm run build -w @copa/core",
+    "dev:api": "npm run dev -w @copa/api",
+    "dev:web": "npm run dev -w @copa/web",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "e2e": "playwright test",
+    "verify": "npm run type-check && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.8"
+  },
+  "overrides": {
+    "postcss": "^8.5.10",
+    "esbuild": "^0.25.0"
+  }
+}
