@@ -2,6 +2,21 @@
 
 All notable changes to Copa Copilot. Format: [Keep a Changelog](https://keepachangelog.com/); versioning: [SemVer](https://semver.org/).
 
+## [0.2.0] — 2026-07-15
+
+### Changed
+- **AI now routes through the llm-service proxy** (`https://llm.lehana.in`, OpenAI-compatible) reaching **Gemini `gemini-3-flash`** — never a direct provider call. Key is a service-to-service `X-Internal-Key` held in Secret Manager. Production runs `DEMO_MODE=false` (`/api/assistant/query` returns `engine: "gemini"`).
+- **UI rebuilt to the StadiumFlow aesthetic**: Bento-grid dashboard, glassmorphism cards, gradient chrome, framer-motion, and a slide-over assistant.
+
+### Added
+- OpenAPI 3.1 contract ([openapi.yaml](openapi.yaml)); installable PWA manifest.
+- Evaluator docs: LICENSE, CONTRIBUTING, SUBMISSION_ARTIFACTS, SUGGESTIONS.
+- Corner-case/boundary test suites — total now **1,513 unit/integration/component + 52 e2e** (core 99.4% cov, API 92%).
+
+### Fixed
+- Weather tile blank when `Infinity` (no lightning) serialized to `null` — client schema now accepts it.
+- Light-theme "Live" badge contrast (WCAG AA); `-0` normalized in the point clamp.
+
 ## [0.1.0] — 2026-07-14
 
 First working release: full stack built, tested and deployed to Cloud Run.

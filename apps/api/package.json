@@ -1,6 +1,6 @@
 {
   "name": "@copa/api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Copa Copilot API — Express on Cloud Run: crowd, routing, egress, weather, incidents, assistant, missions, evidence endpoints.",
   "license": "MIT",

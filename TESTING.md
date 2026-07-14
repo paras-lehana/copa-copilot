@@ -6,15 +6,15 @@ Five layers, all runnable from a clean checkout with zero keys. The deterministi
 
 | Layer | Tool | Location | Count |
 |---|---|---|---|
-| Core unit | Vitest | `packages/core/src/*.test.ts` (one file per module) | **1,300** |
-| API integration | Vitest + Supertest (against `buildApp`, no live port) | `apps/api/src/__tests__/` | **119** |
-| Web component | Vitest + Testing Library (jsdom) | `apps/web/**/__tests__/` | **31** |
+| Core unit | Vitest | `packages/core/src/*.test.ts` (one file per module + `boundaries.test.ts`) | **1,333** |
+| API integration | Vitest + Supertest (against `buildApp`, no live port) | `apps/api/src/__tests__/` | **139** |
+| Web component | Vitest + Testing Library (jsdom) | `apps/web/**/__tests__/` | **41** |
 | E2E + a11y | Playwright + `@axe-core/playwright` | `e2e/` | **52** |
-| **Total** | | | **~1,502** |
+| **Total** | | | **1,565** |
 
 ## Coverage (gated in CI)
 - **`@copa/core`: 99.4% statements** (thresholds enforced: lines/statements/functions ≥ 95, branches ≥ 90).
-- API ≥ 80, web ≥ 55. Run `npm run test:coverage`.
+- **API 92% statements** (gate ≥ 80); web ≥ 55. Run `npm run test:coverage`.
 
 ## What each layer proves
 - **Core unit** — parameterized `test.each` matrices over scenarios × phases × venues × profiles × languages: crowd correctness & determinism, routing constraints (wheelchair = step-free only; never through critical unless unavoidable), egress savings, the weather state machine (8-mile rule), incident triage ordering, entry-readiness (ghost-ticket), emission math, mission validation & point formulas, leaderboard ordering, locale resolution (regional-tag regression), schema strictness & no-raw-input-echo, and Google-catalog honesty invariants.

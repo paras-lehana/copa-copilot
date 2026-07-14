@@ -2,4 +2,4 @@
 // Kept in lockstep with package.json + the README blockquote + the git tag by the
 // pre-submission synchronization check (a drifted version is a caught false claim).
 
-export const API_VERSION = '0.1.0';
+export const API_VERSION = '0.2.0';

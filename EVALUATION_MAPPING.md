@@ -21,7 +21,7 @@
 ## Testing
 | Evidence in code | Tests | Docs |
 |---|---|---|
-| 5 layers: core unit ([packages/core/src/*.test.ts](packages/core/src)), API integration ([apps/api/src/__tests__](apps/api/src/__tests__)), web component ([apps/web](apps/web)), e2e + axe ([e2e/](e2e)); coverage gated in CI | **~1,470 unit/integration/component + 52 e2e**, core 99.4% stmts | TESTING.md |
+| 5 layers: core unit ([packages/core/src/*.test.ts](packages/core/src)), API integration ([apps/api/src/__tests__](apps/api/src/__tests__)), web component ([apps/web](apps/web)), e2e + axe ([e2e/](e2e)); coverage gated in CI | **1,513 unit/integration/component + 52 e2e**, core 99.4% stmts | TESTING.md |
 
 ## Accessibility
 | Evidence in code | Tests | Docs |

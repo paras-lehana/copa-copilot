@@ -1,6 +1,6 @@
 {
   "name": "copa-copilot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Copa Copilot — GenAI operations & fan copilot for FIFA World Cup 2026 stadiums (PromptWars Challenge 4)",
   "license": "MIT",

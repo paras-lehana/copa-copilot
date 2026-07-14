@@ -17,7 +17,7 @@ describe('GET endpoints return engine-true data', () => {
   it('/api/meta serves version and uptime — and NO demo/config flags', async () => {
     const res = await request(app).get('/api/meta');
     expect(res.status).toBe(200);
-    expect(res.body.version).toBe('0.1.0');
+    expect(res.body.version).toBe('0.2.0');
     expect(res.body.service).toBe('copa-copilot-api');
     // The documented regression: demo/bypass state must never be public.
     expect(JSON.stringify(res.body)).not.toMatch(/demo|bypass|apiKey|secret/i);

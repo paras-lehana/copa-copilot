@@ -1,6 +1,6 @@
 # Copa Copilot — GenAI Smart-Stadium Copilot for FIFA World Cup 2026
 
-> **Version 0.1.0** — a GenAI operations & fan copilot spanning all 16 World Cup 2026 venues, grounded in a deterministic stadium engine and built for the Hack2skill × Google PromptWars "Smart Stadiums & Tournament Operations" challenge.
+> **Version 0.2.0** — a GenAI operations & fan copilot spanning all 16 World Cup 2026 venues, grounded in a deterministic stadium engine and built for the Hack2skill × Google PromptWars "Smart Stadiums & Tournament Operations" challenge.
 
 Copa Copilot gives every stakeholder in a World Cup stadium — fans, organizers, volunteers and venue staff — a conversational copilot that understands live crowd, transit, weather and accessibility conditions, and gives the operations room the same intelligence, summarised. Every answer is backed by an engine you can reproduce in a unit test, and the whole app runs with **zero API keys** in demo mode.
 
@@ -58,7 +58,7 @@ Covers all eight challenge dimensions (navigation, crowd management, accessibili
 | Rubric axis | Evidence |
 |---|---|
 | **Code Quality** | TypeScript strict everywhere (`noUncheckedIndexedAccess`), zero `any` / `console.log` / `TODO` / `eslint-disable`, ESLint flat config over every workspace, `Result<T,AppError>` channel, one shared zod schema source. See [EVALUATION_MAPPING.md](EVALUATION_MAPPING.md). |
-| **Testing** | **~1,470 tests** (1,300 core unit + 119 API integration + 31 web component) at **99.4% core statement coverage**, plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
+| **Testing** | **1,513 tests** (1,333 core unit + 139 API integration + 41 web component) at **99.4% core statement coverage** (API 92%), plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
 | **Security** | AI routed only through the llm-service proxy (never a direct provider call); zod `.strict()` validation, token-bucket rate limits, prompt-injection nonce boundary, PII-safe structured logs, Secret Manager key by reference, no CSP-with-`unsafe-inline`. See [SECURITY.md](SECURITY.md). |
 | **Accessibility** | axe-clean on **all 10 routes in light AND dark**, WCAG 2.1 AA, ARIA meters, keyboard-complete, RTL Arabic, theme-aware contrast. See [ACCESSIBILITY.md](ACCESSIBILITY.md). |
 | **Efficiency** | Zero-runtime-dep core, deterministic fallbacks (no retries), briefing cache, reply budgets, scale-to-zero Cloud Run. See [ARCHITECTURE.md](ARCHITECTURE.md). |
@@ -119,7 +119,7 @@ Express API (Cloud Run)  ── Gemini API (assistant / briefing, DEMO fallback)
 
 ```
 copa-copilot/
-├── packages/core/src/          # deterministic domain engine (17 modules, 1,300 tests)
+├── packages/core/src/          # deterministic domain engine (18 modules, 1,333 tests)
 │   ├── crowd.ts                 #   seeded crowd/queue/transit simulation
 │   ├── routing.ts               #   crowd- & accessibility-aware safest route
 │   ├── egress.ts                #   exit-wave advisor (anti-MetLife)
