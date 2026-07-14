@@ -15,9 +15,13 @@ const securityHeaders = [
   },
 ];
 
+import path from 'node:path';
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  // Trace from the repo root so the standalone bundle includes the @copa/core workspace.
+  outputFileTracingRoot: path.join(process.cwd(), '../../'),
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

@@ -1,0 +1,40 @@
+# Cloud Build: build + deploy the Copa Copilot API to Cloud Run.
+# Secrets (GEMINI_API_KEY) are attached to the SERVICE by scripts/deploy.ps1,
+# never baked into the image.
+substitutions:
+  _REGION: us-central1 # host-country region + Always-Free eligible
+  _SERVICE: copa-copilot-api
+  _REPO: copa-copilot
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/api:$BUILD_ID
+      - -f
+      - apps/api/Dockerfile
+      - .
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/api:$BUILD_ID']
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/api:$BUILD_ID
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --memory=512Mi
+      - --max-instances=3 # Efficiency: hackathon-scale cap keeps spend bounded
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/api:$BUILD_ID
+options:
+  logging: CLOUD_LOGGING_ONLY
