@@ -22,8 +22,8 @@ import {
   simulateVenue,
   sustainabilityTiles,
 } from '@copa/core';
-import { type AppConfig, hasGeminiKey } from '../config';
-import { generateContent } from './gemini-client';
+import { type AppConfig, hasLlmKey } from '../config';
+import { llmComplete } from './llm-client';
 import { REFUSAL_RULES, boundEngineData, boundUserInput, makeNonce } from './prompt-boundary';
 
 /** Tool identifiers — the assistant's verbs. */
@@ -234,11 +234,11 @@ export async function answerQuery(
     query.literacyTier,
   );
 
-  if (config.demoMode || !hasGeminiKey(config)) {
+  if (config.demoMode || !hasLlmKey(config)) {
     return { text: demoText, language, toolTraces: traces, engine: 'demo' };
   }
 
-  // LIVE: Gemini rewrites the grounded answer in the user's language and register.
+  // LIVE: the model rewrites the grounded answer in the user's language and register.
   requestOrdinal += 1;
   const nonce = makeNonce(config.simSeed, requestOrdinal);
   const bounded = boundUserInput(query.message, nonce);
@@ -252,8 +252,13 @@ export async function answerQuery(
     'Answer in at most 180 words.',
   ].join('\n');
 
-  const live = await generateContent(
-    { apiKey: config.geminiApiKey, model: config.geminiModel },
+  const live = await llmComplete(
+    {
+      baseUrl: config.llmServiceUrl,
+      endpoint: config.llmEndpoint,
+      internalKey: config.llmInternalKey,
+      model: config.llmModel,
+    },
     systemPrompt,
     `${grounding}\n\n${bounded.wrapped}`,
   );
@@ -262,7 +267,7 @@ export async function answerQuery(
     return { text: demoText, language, toolTraces: traces, engine: 'demo' };
   }
   return {
-    text: applyLiteracyTier(live.value.text, query.literacyTier),
+    text: applyLiteracyTier(live.value, query.literacyTier),
     language,
     toolTraces: traces,
     engine: 'gemini',

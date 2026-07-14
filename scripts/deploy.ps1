@@ -28,26 +28,26 @@ if (-not $repoExists) {
 Write-Host '==> Building + deploying API'
 gcloud builds submit --config cloudbuild-api.yaml --substitutions=_REGION=$Region
 
-# Push the Gemini key into Secret Manager and mount it (live mode).
+# Push the llm-service internal key into Secret Manager and mount it (live mode).
 $envFile = Join-Path $repoRoot 'apps\api\.env'
 if (Test-Path $envFile) {
-  $geminiKey = (Select-String -Path $envFile -Pattern '^GEMINI_API_KEY=(.+)$').Matches | ForEach-Object { $_.Groups[1].Value.Trim() } | Select-Object -First 1
-  if ($geminiKey) {
-    Write-Host '==> Storing Gemini key in Secret Manager (live mode)'
-    $secretExists = gcloud secrets describe gemini-api-key --format='value(name)' 2>$null
+  $llmKey = (Select-String -Path $envFile -Pattern '^LLM_INTERNAL_KEY=(.+)$').Matches | ForEach-Object { $_.Groups[1].Value.Trim() } | Select-Object -First 1
+  if ($llmKey) {
+    Write-Host '==> Storing llm-service key in Secret Manager (live mode)'
+    $secretExists = gcloud secrets describe llm-internal-key --format='value(name)' 2>$null
     if ($secretExists) {
-      $geminiKey | gcloud secrets versions add gemini-api-key --data-file=-
+      $llmKey | gcloud secrets versions add llm-internal-key --data-file=-
     } else {
-      $geminiKey | gcloud secrets create gemini-api-key --data-file=-
+      $llmKey | gcloud secrets create llm-internal-key --data-file=-
     }
     $projectNumber = gcloud projects describe $ProjectId --format='value(projectNumber)'
-    gcloud secrets add-iam-policy-binding gemini-api-key `
+    gcloud secrets add-iam-policy-binding llm-internal-key `
       --member="serviceAccount:$projectNumber-compute@developer.gserviceaccount.com" `
       --role='roles/secretmanager.secretAccessor' | Out-Null
     Write-Host '==> Mounting the secret + going live (DEMO_MODE=false)'
     gcloud run services update copa-copilot-api --region=$Region `
-      --update-secrets="GEMINI_API_KEY=gemini-api-key:latest" `
-      --update-env-vars="GEMINI_MODEL=gemini-2.5-flash,DEMO_MODE=false"
+      --update-secrets="LLM_INTERNAL_KEY=llm-internal-key:latest" `
+      --update-env-vars="LLM_SERVICE_URL=https://llm.lehana.in,LLM_ENDPOINT=antigravity-manager,LLM_MODEL=gemini-3-flash,DEMO_MODE=false"
   }
 }
 

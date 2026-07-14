@@ -42,7 +42,7 @@ The June–July 2026 tournament exposed operational gaps that are documented, no
 
 | Feature | What it does | Google service |
 |---|---|---|
-| **FlowSphere assistant** | Function-calling copilot: routes, queues, exits, weather, tickets — grounded in live engine data, 6 languages | Gemini API |
+| **FlowSphere assistant** | Function-calling copilot: routes, queues, exits, weather, tickets — grounded in live engine data, 6 languages | Gemini (via llm-service) |
 | **Crowd-aware routing** | Safest-route engine (not shortest) with wheelchair / low-vision / sensory profiles | (core engine) + Maps JS/Routes (ready) |
 | **Exit-wave advisor** | The anti-MetLife feature: when to leave & which gate, with transit-load forecast | (core engine) |
 | **Gate-balancing & ops briefing** | Organizer dashboard + one-click AI Operations Briefing with top-3 actions | Gemini API + Cloud Run |
@@ -59,14 +59,14 @@ Covers all eight challenge dimensions (navigation, crowd management, accessibili
 |---|---|
 | **Code Quality** | TypeScript strict everywhere (`noUncheckedIndexedAccess`), zero `any` / `console.log` / `TODO` / `eslint-disable`, ESLint flat config over every workspace, `Result<T,AppError>` channel, one shared zod schema source. See [EVALUATION_MAPPING.md](EVALUATION_MAPPING.md). |
 | **Testing** | **~1,470 tests** (1,300 core unit + 119 API integration + 31 web component) at **99.4% core statement coverage**, plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
-| **Security** | Zod `.strict()` validation, token-bucket rate limits, prompt-injection nonce boundary, PII-safe structured logs, Secret Manager key by reference, no CSP-with-`unsafe-inline`. See [SECURITY.md](SECURITY.md). |
+| **Security** | AI routed only through the llm-service proxy (never a direct provider call); zod `.strict()` validation, token-bucket rate limits, prompt-injection nonce boundary, PII-safe structured logs, Secret Manager key by reference, no CSP-with-`unsafe-inline`. See [SECURITY.md](SECURITY.md). |
 | **Accessibility** | axe-clean on **all 10 routes in light AND dark**, WCAG 2.1 AA, ARIA meters, keyboard-complete, RTL Arabic, theme-aware contrast. See [ACCESSIBILITY.md](ACCESSIBILITY.md). |
 | **Efficiency** | Zero-runtime-dep core, deterministic fallbacks (no retries), briefing cache, reply budgets, scale-to-zero Cloud Run. See [ARCHITECTURE.md](ARCHITECTURE.md). |
 | **Google Services** | 15 catalogued (6 implemented, 5 ready-with-key, 4 planned) via evidence-as-code. See [GOOGLE_SERVICES.md](GOOGLE_SERVICES.md). |
 
 ## Tech stack
 
-TypeScript · npm-workspaces monorepo · **`@copa/core`** pure domain engine (zod-only) · **Express 4** API on **Cloud Run** · **Next.js 15 + React 19** web on Cloud Run · **Gemini 2.5-flash** · Vitest · Playwright + axe-core · ESLint + Prettier · Docker + Cloud Build + Artifact Registry + Secret Manager + Cloud Logging.
+TypeScript · npm-workspaces monorepo · **`@copa/core`** pure domain engine (zod-only) · **Express 4** API on **Cloud Run** · **Next.js 15 + React 19** web on Cloud Run · framer-motion · **Gemini (gemini-3-flash) via the llm-service proxy** · Vitest · Playwright + axe-core · ESLint + Prettier · Docker + Cloud Build + Artifact Registry + Secret Manager + Cloud Logging.
 
 ## Quick start (zero keys)
 

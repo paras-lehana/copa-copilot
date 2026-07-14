@@ -8,11 +8,15 @@ import { z } from 'zod';
 const configSchema = z.object({
   port: z.coerce.number().int().min(1).max(65535).default(8080),
   demoMode: z.boolean(),
-  geminiApiKey: z.string().default(''),
-  geminiModel: z.string().default('gemini-2.5-flash'),
+  // AI inference is routed through the Lehana llm-service proxy (OpenAI-compatible),
+  // never a direct provider call — a platform rule and a cost/security control.
+  llmServiceUrl: z.string().default('https://llm.lehana.in'),
+  llmEndpoint: z.string().default('antigravity-manager'),
+  llmModel: z.string().default('gemini-3-flash'),
+  /** Service-to-service key sent as X-Internal-Key; empty ⇒ demo path. */
+  llmInternalKey: z.string().default(''),
   allowedOrigins: z.array(z.string().url().or(z.string().startsWith('http://localhost'))),
   simSeed: z.coerce.number().int().default(26),
-  /** Injectable clock for tests — production uses the real one. */
 });
 
 /** Typed runtime configuration. */
@@ -34,8 +38,10 @@ export function loadConfig(
     port: env.PORT,
     // Demo mode: opt-out locally, opt-in in production (never accidentally live-demo).
     demoMode: env.DEMO_MODE === undefined ? !isProduction : env.DEMO_MODE === 'true',
-    geminiApiKey: env.GEMINI_API_KEY ?? '',
-    geminiModel: env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+    llmServiceUrl: env.LLM_SERVICE_URL ?? 'https://llm.lehana.in',
+    llmEndpoint: env.LLM_ENDPOINT ?? 'antigravity-manager',
+    llmModel: env.LLM_MODEL ?? 'gemini-3-flash',
+    llmInternalKey: env.LLM_INTERNAL_KEY ?? '',
     allowedOrigins: (env.ALLOWED_ORIGINS ?? 'http://localhost:3000')
       .split(',')
       .map((o) => o.trim())
@@ -45,7 +51,7 @@ export function loadConfig(
   return { ...parsed, now };
 }
 
-/** True when a Gemini key is present — the live-assistant readiness signal. */
-export function hasGeminiKey(config: AppConfig): boolean {
-  return config.geminiApiKey.length > 0;
+/** True when an llm-service key is present — the live-assistant readiness signal. */
+export function hasLlmKey(config: AppConfig): boolean {
+  return config.llmInternalKey.length > 0;
 }

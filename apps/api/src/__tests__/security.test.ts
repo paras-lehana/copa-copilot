@@ -92,7 +92,7 @@ describe('security headers & CORS', () => {
 });
 
 describe('secret absence sweeps (M24)', () => {
-  const { app } = testApp({ GEMINI_API_KEY: 'AIzaFAKEKEYFORTESTS1234567890abcdefghij' });
+  const { app } = testApp({ LLM_INTERNAL_KEY: 'FAKE-TEST-LLM-KEY-not-a-real-secret' });
 
   const GET_ENDPOINTS = [
     '/api/health',
@@ -112,8 +112,8 @@ describe('secret absence sweeps (M24)', () => {
   it.each(GET_ENDPOINTS)('%s never leaks env values or key material', async (path) => {
     const res = await request(app).get(path);
     const body = JSON.stringify(res.body);
-    expect(body).not.toContain('AIzaFAKEKEY');
-    expect(body).not.toMatch(/GEMINI_API_KEY"?\s*[:=]\s*"[^"]+[a-z0-9]/i);
+    expect(body).not.toContain('FAKE-TEST-LLM-KEY');
+    expect(body).not.toMatch(/(GEMINI_API_KEY|LLM_INTERNAL_KEY)"?\s*[:=]\s*"[^"]+[a-z0-9]/i);
     expect(body).not.toMatch(/-----BEGIN/);
   });
 

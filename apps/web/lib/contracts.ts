@@ -99,7 +99,8 @@ export const weatherResponseSchema = z.object({
     heatTier: z.enum(['normal', 'caution', 'cooling-breaks', 'extreme']),
     reading: z.object({
       minute: z.number(),
-      nearestStrikeMiles: z.number(),
+      // Infinity (no lightning) serializes to null over JSON — accept both.
+      nearestStrikeMiles: z.number().nullable(),
       heatIndexF: z.number(),
     }),
     suspendedUntilMinute: z.number().optional(),

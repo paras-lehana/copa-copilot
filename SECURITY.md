@@ -10,8 +10,8 @@ Responsible, defence-in-depth implementation sized to a hackathon prototype. No 
 | 2 | **Tampering** with request bodies | Zod `.strict()` on every endpoint; unknown keys rejected | `packages/core/src/schemas.ts`, `apps/api/src/middleware/validate.ts` |
 | 3 | **Repudiation** / weak audit | Structured Cloud-Logging-shaped request logs (method/path/status/latency) | `apps/api/src/middleware/logger.ts` |
 | 4 | **Information disclosure** — input echo | Custom zod error map returns field-name-only messages; a test asserts a secret value never appears in any error | `schemas.ts` (`safeErrorMap`), `schemas.test.ts` |
-| 5 | **Information disclosure** — secrets | Gemini key server-side only, mounted from Secret Manager by reference; secret-absence sweep over every GET endpoint | `scripts/deploy.ps1`, `security.test.ts` |
-| 6 | **Information disclosure** — upstream payloads | Gemini failures sanitized to `UPSTREAM_FAILURE`; response bodies/auth never logged | `apps/api/src/services/gemini-client.ts` |
+| 5 | **Information disclosure** — secrets | llm-service key server-side only, sent as `X-Internal-Key` header (never a URL), mounted from Secret Manager by reference; secret-absence sweep over every GET endpoint | `scripts/deploy.ps1`, `security.test.ts` |
+| 6 | **Information disclosure** — upstream payloads | llm-service failures sanitized to `UPSTREAM_FAILURE`; response bodies/auth never logged | `apps/api/src/services/llm-client.ts` |
 | 7 | **DoS** | Per-IP token buckets: 60/min general, 10/min assistant; 32 kb JSON body cap; `--max-instances=3` | `rate-limit.ts`, `server.ts`, `cloudbuild-api.yaml` |
 | 8 | **Elevation** — prompt injection | Per-request nonce fence around user input + `VERIFIED_STADIUM_DATA` grounding; refusal rules; 10-attack red-team suite | `prompt-boundary.ts`, `assistant.test.ts` |
 | 9 | **Elevation** — point minting | Client-restored points clamped server-side to a max; mission replay rejected | `gamification.ts` (`clampRestoredPoints`), `engagement.ts` |
@@ -21,6 +21,9 @@ Every failure returns exactly `{ "error": { "code", "message" } }` with a locali
 
 ## Content-Security-Policy — a deliberate choice
 The API sends `default-src 'none'`. The **web origin ships the safe hardening headers** (nosniff, X-Frame-Options DENY, Referrer-Policy, HSTS, Permissions-Policy) **but no CSP** — a CSP that would require `'unsafe-inline'` to keep Next.js hydration working documents its own bypass and scores worse than its absence. A hash-based CSP is the planned upgrade.
+
+## AI routing (platform rule)
+All LLM inference goes through the **llm-service proxy** (`https://llm.lehana.in`), never a direct provider call. This centralizes cost control, rate limiting and key management; the app holds only a service-to-service `X-Internal-Key` (in Secret Manager), not a provider key.
 
 ## Responsible AI
 The assistant is grounded exclusively in engine tool output, cannot be re-instructed by text inside the user fence, refuses PII / security-bypass / restricted-area requests, and directs medical emergencies to first aid and staff rather than diagnosing.

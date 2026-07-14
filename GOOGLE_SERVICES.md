@@ -4,14 +4,16 @@
 
 **Scorecard (0.1.0):** 15 services · 6 implemented · 5 ready-with-key · 4 planned · 10 product families.
 
+> **AI routing:** all inference goes through the **llm-service proxy** (`https://llm.lehana.in`, OpenAI-compatible), which reaches Gemini (`gemini-3-flash`) on Google AI accounts. The app never calls a provider API directly — a platform cost/security rule. Auth is a service-to-service `X-Internal-Key` held in Secret Manager.
+
 | Service | Status | Use in Copa Copilot | Fallback | Code |
 |---|---|---|---|---|
-| **Gemini API** | implemented | Function-calling assistant, ops briefings, incident drafting | DEMO_MODE deterministic replies from the same engines | `apps/api/src/services/gemini-client.ts`, `assistant.ts` |
+| **Gemini (via llm-service)** | implemented | Function-calling assistant, ops briefings, incident drafting | DEMO_MODE deterministic replies from the same engines | `apps/api/src/services/llm-client.ts`, `assistant.ts` |
 | **Cloud Run** | implemented | Hosts API + web, scale-to-zero, `us-central1` | local dev servers | `apps/*/Dockerfile`, `cloudbuild-*.yaml` |
 | **Cloud Build** | implemented | Builds + deploys both images | local `docker build` | `cloudbuild-{api,web}.yaml`, `scripts/deploy.ps1` |
 | **Artifact Registry** | implemented | Stores served images (`copa-copilot` repo) | local image cache | `cloudbuild-*.yaml` |
 | **Cloud Logging** | implemented | Structured JSON logs (no `console.log`) | same lines to stdout | `apps/api/src/middleware/logger.ts` |
-| **Secret Manager** | implemented | Gemini key mounted by reference, least-privilege IAM | local gitignored `.env` | `scripts/deploy.ps1` |
+| **Secret Manager** | implemented | llm-service internal key mounted by reference, least-privilege IAM | local gitignored `.env` | `scripts/deploy.ps1` |
 | **Maps JavaScript API** | ready-with-key | Perimeter station↔gate map | text directions from the venue registry | `apps/web` map page |
 | **Routes API** | ready-with-key | Station↔stadium travel times for egress | deterministic registry estimates | `apps/api/src/services` |
 | **Cloud Translation** | ready-with-key | Long-tail UI translation | 6-language catalog + Gemini in-conversation | `packages/core/src/i18n.ts` |
@@ -23,9 +25,11 @@
 | **Pub/Sub** | planned | Real digital-twin telemetry ingestion | seeded simulation over SSE | ARCHITECTURE.md |
 
 ## Activation walkthrough
-1. Put a real `AIza…` Gemini key in `apps/api/.env` (`GEMINI_API_KEY=…`).
+1. Put the llm-service key in `apps/api/.env` (`LLM_INTERNAL_KEY=sk-…`, gitignored).
 2. `pwsh scripts/deploy.ps1 -ProjectId event-manager-promptwars` — pushes the key to Secret Manager, mounts it, flips `DEMO_MODE=false`.
-3. The assistant now answers via Gemini, still grounded in the same `VERIFIED_STADIUM_DATA`; on any upstream failure it degrades to the deterministic path automatically.
+3. The assistant then answers via Gemini through llm-service, grounded in the same `VERIFIED_STADIUM_DATA`; on any upstream failure it degrades to the deterministic path automatically.
+
+**Live now:** the production deployment runs with `DEMO_MODE=false` — `/api/assistant/query` returns `engine: "gemini"`.
 
 ## Free-tier note
 Gemini free tier (Flash), Cloud Run (2M req/mo), Firestore (1 GiB, 50K reads/day) and Maps per-SKU caps all comfortably cover a hackathon demo — the deployment runs at ~$0.

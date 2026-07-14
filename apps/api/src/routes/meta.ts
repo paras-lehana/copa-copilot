@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { GOOGLE_SERVICES, buildScorecard } from '@copa/core';
-import { type AppConfig, hasGeminiKey } from '../config';
+import { type AppConfig, hasLlmKey } from '../config';
 
 import { API_VERSION } from '../version';
 
@@ -31,7 +31,7 @@ export function metaRouter(config: AppConfig): Router {
       services: GOOGLE_SERVICES,
       runtime: {
         // Readiness signals only — never values, never key material.
-        geminiKeyPresent: hasGeminiKey(config),
+        geminiKeyPresent: hasLlmKey(config),
         region: process.env.K_SERVICE !== undefined ? 'cloud-run' : 'local',
       },
     });

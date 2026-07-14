@@ -8,8 +8,9 @@ describe('Button', () => {
     render(<Button>Go</Button>);
     const btn = screen.getByRole('button', { name: 'Go' });
     expect(btn).toBeInTheDocument();
-    expect(btn.style.minHeight).toBe('44px');
-    expect(btn.style.minWidth).toBe('44px');
+    // The 44px min touch target is enforced via utility classes.
+    expect(btn.className).toContain('min-h-[44px]');
+    expect(btn.className).toContain('min-w-[44px]');
   });
 
   it('forwards click handlers', async () => {

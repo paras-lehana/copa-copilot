@@ -18,7 +18,7 @@ test('every route renders its heading and live data with no console errors', asy
 test('fan journey: dashboard shows crowd data and computes exit advice', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
   // Live crowd data rendered (a phase label from the engine).
-  await expect(page.getByText(/Phase:/)).toBeVisible();
+  await expect(page.getByText(/Phase/)).toBeVisible();
   // The anti-MetLife exit advisor computes a real saving.
   await page.getByRole('button', { name: /get my exit advice/i }).click();
   await expect(page.getByText(/min/).first()).toBeVisible({ timeout: 15_000 });
@@ -45,7 +45,7 @@ test('organizer journey: ops briefing generates a headline and actions', async (
 
 test('google-services page renders the live catalog with implemented services', async ({ page }) => {
   await page.goto('/google-services', { waitUntil: 'networkidle' });
-  await expect(page.getByText('Gemini API')).toBeVisible();
+  await expect(page.getByText(/Gemini/).first()).toBeVisible();
   await expect(page.getByText('Implemented').first()).toBeVisible();
   await expect(page.getByText(/exposesSecretValues/)).toBeVisible();
 });

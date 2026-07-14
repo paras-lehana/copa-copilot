@@ -2,6 +2,8 @@
 
 The assistant is *designed*, not improvised. This documents the prompt strategy — a first-class PromptWars artifact.
 
+> **Routing:** live inference is Gemini (`gemini-3-flash`) reached through the **llm-service proxy** (`apps/api/src/services/llm-client.ts`), never a direct provider call.
+
 ## Principle: tools first, model second
 User text never reaches an engine directly. An intent router (demo) or Gemini (live) selects a **tool**; the tool calls `@copa/core` with typed arguments; the reply is composed **from the tool's output**. This means:
 - answers are grounded in reproducible engine data, not model recall;

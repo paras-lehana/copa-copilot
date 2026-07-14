@@ -11,8 +11,8 @@ import {
   sustainabilityTiles,
   triageQueue,
 } from '@copa/core';
-import { type AppConfig, hasGeminiKey } from '../config';
-import { generateContent } from './gemini-client';
+import { type AppConfig, hasLlmKey } from '../config';
+import { llmComplete } from './llm-client';
 
 /** The briefing payload. */
 export interface OpsBriefing {
@@ -113,14 +113,19 @@ export async function produceBriefing(
   if (demo === undefined) return undefined;
 
   let briefing = demo;
-  if (!config.demoMode && hasGeminiKey(config)) {
-    const live = await generateContent(
-      { apiKey: config.geminiApiKey, model: config.geminiModel },
+  if (!config.demoMode && hasLlmKey(config)) {
+    const live = await llmComplete(
+      {
+        baseUrl: config.llmServiceUrl,
+        endpoint: config.llmEndpoint,
+        internalKey: config.llmInternalKey,
+        model: config.llmModel,
+      },
       `You are the operations-briefing writer for a FIFA World Cup 2026 stadium command room. Rewrite the following verified aggregation as a crisp briefing for a ${request.role}: one headline sentence, then up to 5 bullets, then exactly 3 prioritized actions. Use ONLY the numbers provided. Maximum 150 words.`,
       JSON.stringify({ headline: demo.headline, bullets: demo.bullets, topActions: demo.topActions }),
     );
     if (live.ok) {
-      briefing = { ...demo, headline: live.value.text.split('\n')[0] ?? demo.headline, engine: 'gemini' };
+      briefing = { ...demo, headline: live.value.split('\n')[0] ?? demo.headline, engine: 'gemini' };
     }
   }
 

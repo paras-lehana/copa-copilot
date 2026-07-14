@@ -1,60 +1,83 @@
 'use client';
 
-// app/page.tsx — the fan dashboard. Single <h1>; section cards are <section> with
-// their own <h2>; minor cards are plain <div> (the heading-hierarchy fix). Numbers
-// come only from the API (the engine), never hard-coded here.
+// app/page.tsx — the fan dashboard as a Bento grid (StadiumFlow aesthetic).
+// Single <h1>; primary regions are <section> with their own <h2>; minor cards are
+// <div>. Every number comes from the API (the engine), never hard-coded here.
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { crowdResponseSchema, egressResponseSchema, weatherResponseSchema } from '../lib/contracts';
 import { apiPost } from '../lib/api-client';
 import { useApi } from '../lib/use-api';
 import { useSession } from '../lib/session';
 import { catalog } from '../lib/strings';
-import { DensityMeter, GlassCard, RetryCard, Skeleton, StatTile, StatusPill } from '../components/ui';
+import { DensityMeter, RetryCard, SectionTitle, Skeleton, StatusPill } from '../components/ui';
+
+const fade = (i: number) => ({
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' as const },
+});
 
 export default function DashboardPage() {
   const session = useSession();
   const strings = catalog(session.language);
-  const [matchMinute, setMatchMinute] = useState(80);
+  const [minute, setMinute] = useState(80);
 
   const crowd = useApi(
-    `/api/crowd/${session.venueId}?scenario=egress-surge&minute=${matchMinute}`,
+    `/api/crowd/${session.venueId}?scenario=egress-surge&minute=${minute}`,
     crowdResponseSchema,
-    [session.venueId, matchMinute],
+    [session.venueId, minute],
   );
   const weather = useApi(
-    `/api/weather/${session.venueId}?preset=heat-dome&minute=${matchMinute}`,
+    `/api/weather/${session.venueId}?preset=heat-dome&minute=${minute}`,
     weatherResponseSchema,
-    [session.venueId, matchMinute],
+    [session.venueId, minute],
   );
 
-  const [exitText, setExitText] = useState<string | undefined>(undefined);
-  const [exitLoading, setExitLoading] = useState(false);
+  const [exit, setExit] = useState<{ text: string; saved: number } | undefined>(undefined);
+  const [exitBusy, setExitBusy] = useState(false);
 
-  async function loadExitAdvice() {
-    setExitLoading(true);
-    const result = await apiPost(
-      '/api/egress/advice',
-      { venueId: session.venueId, mode: 'rail' },
-      egressResponseSchema,
+  async function loadExit() {
+    setExitBusy(true);
+    const r = await apiPost('/api/egress/advice', { venueId: session.venueId, mode: 'rail' }, egressResponseSchema);
+    setExit(
+      r.ok
+        ? { text: r.value.advice.explanation, saved: r.value.advice.minutesSavedVsFullTime }
+        : { text: r.message, saved: 0 },
     );
-    setExitText(result.ok ? result.value.advice.explanation : result.message);
-    setExitLoading(false);
+    setExitBusy(false);
   }
 
-  const busiest = crowd.data?.snapshot.zones
-    ? [...crowd.data.snapshot.zones].sort((a, b) => b.densityPct - a.densityPct)[0]
-    : undefined;
+  const zones = crowd.data?.snapshot.zones ?? [];
+  const busiest = zones.length > 0 ? [...zones].sort((a, b) => b.densityPct - a.densityPct)[0] : undefined;
+  const criticalCount = zones.filter((z) => z.status === 'critical').length;
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <div>
-        <h1 style={{ margin: '4px 0' }}>{strings.appName}</h1>
-        <p style={{ color: 'var(--text-dim)', margin: 0 }}>{strings.tagline}</p>
-      </div>
+    <div className="grid gap-4">
+      {/* Header + live banner */}
+      <motion.div {...fade(0)}>
+        <div className="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-1">
+          <span
+            className="w-2 h-2 rounded-full animate-pulse"
+            style={{ background: 'var(--danger)' }}
+            aria-hidden="true"
+          />
+          <span className="font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>
+            Live
+          </span>
+          <span>· {session.venueId} · match minute {minute}&apos;</span>
+        </div>
+        <h1 className="m-0 text-3xl font-black">
+          Copa <span className="text-gradient">Copilot</span>
+        </h1>
+        <p className="text-[var(--text-dim)] mt-1 mb-0">{strings.tagline}</p>
+      </motion.div>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <label htmlFor="minute" style={{ fontSize: 13, color: 'var(--text-dim)' }}>
+      {/* Match-minute scrubber */}
+      <motion.div {...fade(1)} className="flex items-center gap-3 flex-wrap">
+        <label htmlFor="minute" className="text-[13px] text-[var(--text-dim)] font-medium">
           Match minute
         </label>
         <input
@@ -62,84 +85,143 @@ export default function DashboardPage() {
           type="range"
           min={-60}
           max={135}
-          value={matchMinute}
-          onChange={(e) => setMatchMinute(Number(e.target.value))}
-          aria-valuetext={`${matchMinute} minutes`}
-          style={{ flex: 1, minWidth: 160 }}
+          value={minute}
+          onChange={(e) => setMinute(Number(e.target.value))}
+          aria-valuetext={`${minute} minutes`}
+          className="flex-1 min-w-[160px] accent-[var(--primary)]"
         />
-        <span aria-hidden="true">{matchMinute}&apos;</span>
-      </div>
+        <span aria-hidden="true" className="font-bold tabular-nums">
+          {minute}&apos;
+        </span>
+      </motion.div>
 
-      <section aria-labelledby="crowd-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="crowd-h" style={{ marginTop: 0 }}>
-          {strings.crowdNow}
-        </h2>
-        {crowd.loading && <Skeleton height={40} />}
-        {crowd.error !== undefined && <RetryCard message={crowd.error} onRetry={crowd.reload} />}
-        {crowd.data !== undefined && (
-          <>
-            <p style={{ marginTop: 0, color: 'var(--text-dim)' }}>
-              Phase: <strong>{crowd.data.snapshot.phase}</strong>
-              {busiest !== undefined && (
-                <>
-                  {' '}
-                  · busiest: <strong>{busiest.name}</strong> <StatusPill status={busiest.status} />
-                </>
-              )}
-            </p>
-            {crowd.data.snapshot.zones.slice(0, 5).map((z) => (
-              <DensityMeter key={z.zoneId} label={z.name} pct={z.densityPct} status={z.status} />
-            ))}
-          </>
-        )}
-      </section>
+      {/* Bento grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {/* Crowd — spans wide */}
+        <motion.section {...fade(2)} aria-labelledby="crowd-h" className="glass-card glass-card-hover p-5 col-span-2 md:col-span-2 row-span-2">
+          <div className="flex items-center justify-between">
+            <SectionTitle id="crowd-h" icon="👥">
+              {strings.crowdNow}
+            </SectionTitle>
+            {criticalCount > 0 && <StatusPill status="critical" label={`${criticalCount} critical`} />}
+          </div>
+          {crowd.loading && <Skeleton height={140} />}
+          {crowd.error !== undefined && <RetryCard message={crowd.error} onRetry={crowd.reload} />}
+          {crowd.data !== undefined && (
+            <>
+              <p className="mt-0 mb-3 text-[var(--text-dim)] text-sm">
+                Phase <strong className="text-[var(--text)]">{crowd.data.snapshot.phase}</strong>
+                {busiest !== undefined && (
+                  <>
+                    {' '}
+                    · busiest <strong className="text-[var(--text)]">{busiest.name}</strong>
+                  </>
+                )}
+              </p>
+              {zones.slice(0, 6).map((z) => (
+                <DensityMeter key={z.zoneId} label={z.name} pct={z.densityPct} status={z.status} />
+              ))}
+            </>
+          )}
+        </motion.section>
 
-      <section aria-labelledby="exit-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="exit-h" style={{ marginTop: 0 }}>
-          {strings.bestExit} — beat the post-match rush
-        </h2>
-        <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
-          The anti-MetLife feature: leave at the smartest minute instead of with the whole crowd.
-        </p>
-        {exitText === undefined ? (
-          <button
-            onClick={() => void loadExitAdvice()}
-            disabled={exitLoading}
-            aria-disabled={exitLoading}
-            style={{ minHeight: 44, padding: '10px 18px', borderRadius: 10, background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: 'pointer' }}
-          >
-            {exitLoading ? 'Checking…' : 'Get my exit advice'}
-          </button>
-        ) : (
-          <p role="status" style={{ fontWeight: 600 }}>
-            {exitText}
+        {/* Assistant promo */}
+        <motion.div {...fade(3)} className="glass-card glass-glow glass-card-hover p-5 col-span-2 md:col-span-2 row-span-2 flex flex-col">
+          <div className="flex items-center gap-2.5 mb-2">
+            <span className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-2)] grid place-items-center text-base">
+              ✨
+            </span>
+            <div>
+              <h2 className="text-base font-bold m-0">FlowSphere Assistant</h2>
+              <p className="text-[10px] text-[var(--text-dim)] m-0">Gemini via llm-service · grounded</p>
+            </div>
+          </div>
+          <p className="text-sm text-[var(--text-dim)] mb-3">
+            Ask about routes, queues, exits, weather or tickets — answered from live venue data in your language.
           </p>
-        )}
-      </section>
+          <div className="space-y-2 flex-1">
+            {["What's the safest route to my seat?", 'When should I leave for the train?', 'Will my resale ticket work?'].map(
+              (q) => (
+                <Link
+                  key={q}
+                  href="/assistant"
+                  className="block text-xs px-3 py-2.5 rounded-xl bg-[color-mix(in_srgb,var(--text-dim)_10%,transparent)] text-[var(--text-dim)] border border-[var(--surface-edge)] hover:border-[var(--primary)] hover:text-[var(--text)] transition-all no-underline"
+                >
+                  &ldquo;{q}&rdquo;
+                </Link>
+              ),
+            )}
+          </div>
+          <Link
+            href="/assistant"
+            className="mt-3 w-full text-center py-3 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--primary-2)] text-white font-semibold no-underline shadow-lg"
+          >
+            Open the assistant ✨
+          </Link>
+        </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-        <StatTile
-          label="Weather protocol"
-          value={weather.data?.protocol.state ?? '—'}
-          hint={
-            weather.data !== undefined
-              ? `Heat tier ${weather.data.protocol.heatTier} · ${weather.data.protocol.reading.heatIndexF}°F`
-              : undefined
-          }
-        />
-        <StatTile label="Your venue" value={session.venueId} hint={`Seat area ${session.sectionZoneId}`} />
-        <StatTile label="Persona" value={session.persona} hint={`Access: ${session.accessibility}`} />
+        {/* Exit advisor — the anti-MetLife hero */}
+        <motion.section {...fade(4)} aria-labelledby="exit-h" className="glass-card glass-card-hover p-5 col-span-2 md:col-span-2">
+          <SectionTitle id="exit-h" icon="🚉">
+            {strings.bestExit}
+          </SectionTitle>
+          <p className="text-xs text-[var(--text-dim)] mt-0 mb-3">
+            Beat the post-match rush — leave at the smartest minute, not with the whole crowd.
+          </p>
+          {exit === undefined ? (
+            <button
+              onClick={() => void loadExit()}
+              disabled={exitBusy}
+              aria-disabled={exitBusy}
+              className="min-h-[44px] px-[18px] py-2.5 rounded-xl bg-[var(--primary)] text-[var(--on-primary)] font-semibold border-0 cursor-pointer disabled:opacity-50"
+            >
+              {exitBusy ? 'Checking…' : 'Get my exit advice'}
+            </button>
+          ) : (
+            <div role="status">
+              <p className="font-semibold m-0">{exit.text}</p>
+              {exit.saved > 0 && (
+                <p className="mt-2 mb-0 text-[var(--ok)] font-bold text-lg">You save ~{exit.saved} min ⚡</p>
+              )}
+            </div>
+          )}
+        </motion.section>
+
+        {/* Weather tile */}
+        <motion.div {...fade(5)} className="glass-card p-4 col-span-1">
+          <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] m-0 mb-1">🌦️ Weather</h3>
+          <p className="text-lg font-black m-0 capitalize">{weather.data?.protocol.state ?? '—'}</p>
+          {weather.data !== undefined && (
+            <p className="text-[11px] text-[var(--text-dim)] m-0 mt-0.5">
+              {weather.data.protocol.heatTier} · {weather.data.protocol.reading.heatIndexF}°F
+            </p>
+          )}
+        </motion.div>
+
+        {/* Venue tile */}
+        <motion.div {...fade(6)} className="glass-card p-4 col-span-1">
+          <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] m-0 mb-1">🎟️ You</h3>
+          <p className="text-sm font-bold m-0 capitalize">{session.persona}</p>
+          <p className="text-[11px] text-[var(--text-dim)] m-0 mt-0.5">
+            {session.sectionZoneId} · {session.accessibility}
+          </p>
+        </motion.div>
+
+        {/* Setup nudge */}
+        <motion.div {...fade(7)} className="glass-card glass-card-hover p-5 col-span-2 md:col-span-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-lg font-bold m-0">Make it yours</h2>
+              <p className="text-xs text-[var(--text-dim)] m-0">
+                Pick your venue, seat, language and accessibility needs so every answer fits you.
+              </p>
+            </div>
+            <Link href="/onboarding" className="text-[var(--primary)] font-semibold no-underline">
+              Go to onboarding →
+            </Link>
+          </div>
+        </motion.div>
       </div>
-
-      <GlassCard>
-        <h2 style={{ marginTop: 0 }}>Not set up yet?</h2>
-        <p style={{ color: 'var(--text-dim)' }}>
-          Pick your venue, seat, language and accessibility needs so every answer fits you.
-        </p>
-        <a href="/onboarding" style={{ color: 'var(--primary)', fontWeight: 600 }}>
-          Go to onboarding →
-        </a>
-      </GlassCard>
     </div>
   );
 }

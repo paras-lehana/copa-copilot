@@ -3,7 +3,7 @@
 import { type Express } from 'express';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { generateContent } from '../services/gemini-client';
+import { llmComplete } from '../services/llm-client';
 import { testApp } from './helpers';
 
 describe('user bootstrap & anti-minting', () => {
@@ -154,13 +154,22 @@ describe('leaderboard endpoint', () => {
   });
 });
 
-describe('gemini-client seam (M28 fallback contract)', () => {
-  const options = { apiKey: 'k', model: 'gemini-2.5-flash' };
+describe('llm-service client seam (M28 fallback contract)', () => {
+  const options = {
+    baseUrl: 'https://llm.example',
+    endpoint: 'antigravity-manager',
+    internalKey: 'sk-test',
+    model: 'gemini-3-flash',
+  };
+  const chatReply = (content: string) =>
+    new Response(JSON.stringify({ choices: [{ message: { role: 'assistant', content } }] }), {
+      status: 200,
+    });
 
-  it('sends the key as a header, never in the URL', async () => {
+  it('sends the key in the X-Internal-Key header, never in the URL, and hits /smk/<endpoint>', async () => {
     let seenUrl = '';
     let seenHeaders: Record<string, string> = {};
-    await generateContent(
+    await llmComplete(
       {
         ...options,
         fetchFn: async (url, init) => {
@@ -168,41 +177,34 @@ describe('gemini-client seam (M28 fallback contract)', () => {
           seenHeaders = Object.fromEntries(
             Object.entries((init.headers ?? {}) as Record<string, string>),
           );
-          return new Response(
-            JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }),
-            { status: 200 },
-          );
+          return chatReply('ok');
         },
       },
       'system',
       'user',
     );
-    expect(seenUrl).not.toContain('k=');
-    expect(seenUrl).not.toContain('key=');
-    expect(seenHeaders['x-goog-api-key']).toBe('k');
+    expect(seenUrl).toBe('https://llm.example/smk/antigravity-manager');
+    expect(seenUrl).not.toContain('sk-test');
+    expect(seenHeaders['x-internal-key']).toBe('sk-test');
   });
 
-  it('parses a good reply', async () => {
-    const r = await generateContent(
-      {
-        ...options,
-        fetchFn: async () =>
-          new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'hello' }] } }] }), {
-            status: 200,
-          }),
-      },
+  it('parses an OpenAI-shaped reply', async () => {
+    const r = await llmComplete({ ...options, fetchFn: async () => chatReply('hello') }, 's', 'u');
+    expect(r.ok && r.value).toBe('hello');
+  });
+
+  it('strips markdown code fences from replies', async () => {
+    const r = await llmComplete(
+      { ...options, fetchFn: async () => chatReply('```json\n{"a":1}\n```') },
       's',
       'u',
     );
-    expect(r.ok && r.value.text).toBe('hello');
+    expect(r.ok && r.value).toBe('{"a":1}');
   });
 
   it.each([400, 401, 429, 500])('sanitizes upstream %d to UPSTREAM_FAILURE', async (status) => {
-    const r = await generateContent(
-      {
-        ...options,
-        fetchFn: async () => new Response('{"error": {"details": "SENSITIVE UPSTREAM BODY"}}', { status }),
-      },
+    const r = await llmComplete(
+      { ...options, fetchFn: async () => new Response('{"detail":"SENSITIVE UPSTREAM BODY"}', { status }) },
       's',
       'u',
     );
@@ -210,15 +212,15 @@ describe('gemini-client seam (M28 fallback contract)', () => {
     expect(!r.ok && r.error.diagnostics).not.toContain('SENSITIVE');
   });
 
-  it('maps network failure and empty candidates to UPSTREAM_FAILURE', async () => {
-    const network = await generateContent(
+  it('maps network failure and empty choices to UPSTREAM_FAILURE', async () => {
+    const network = await llmComplete(
       { ...options, fetchFn: async () => Promise.reject(new Error('boom')) },
       's',
       'u',
     );
     expect(!network.ok && network.error.code).toBe('UPSTREAM_FAILURE');
-    const empty = await generateContent(
-      { ...options, fetchFn: async () => new Response(JSON.stringify({ candidates: [] }), { status: 200 }) },
+    const empty = await llmComplete(
+      { ...options, fetchFn: async () => new Response(JSON.stringify({ choices: [] }), { status: 200 }) },
       's',
       'u',
     );
@@ -226,12 +228,12 @@ describe('gemini-client seam (M28 fallback contract)', () => {
   });
 
   it('live mode degrades to the demo reply when upstream fails (endpoint-level)', async () => {
-    const { app } = testApp({ DEMO_MODE: 'false', GEMINI_API_KEY: 'not-a-real-key' });
+    const { app } = testApp({ DEMO_MODE: 'false', LLM_INTERNAL_KEY: 'sk-not-real', LLM_SERVICE_URL: 'https://127.0.0.1:9' });
     const res = await request(app).post('/api/assistant/query').send({
       message: 'How crowded is it?',
       venueId: 'metlife',
     });
-    // The fake key fails upstream; the reply must still be a grounded demo answer.
+    // The unreachable upstream fails; the reply must still be a grounded demo answer.
     expect(res.status).toBe(200);
     expect(res.body.reply.engine).toBe('demo');
     expect(res.body.reply.toolTraces).toHaveLength(1);
