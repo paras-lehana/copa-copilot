@@ -1,4 +1,4 @@
-// schemas.ts — the single zod schema source for API requests and web forms.
+﻿// schemas.ts — the single zod schema source for API requests and web forms.
 // Boundary: every schema is .strict(); the shared error map yields SAFE messages
 // that never echo raw input (path names only); display strings reject markup.
 // Web NEVER hand-mirrors these bounds — it imports them.
@@ -48,9 +48,19 @@ const NO_MARKUP = /^[^<>]*$/;
 const displayText = (max: number) =>
   z.string().trim().min(1).max(max).regex(NO_MARKUP, { message: 'Markup is not allowed.' });
 
-export const venueIdSchema = z.enum(VENUE_IDS as [string, ...string[]]);
-export const scenarioSchema = z.enum(SCENARIOS as unknown as [string, ...string[]]);
-export const weatherPresetSchema = z.enum(WEATHER_PRESETS as unknown as [string, ...string[]]);
+/**
+ * zod's enum() requires a non-empty tuple literal, but our option lists are readonly
+ * const arrays owned by the domain modules. This helper performs the one, documented
+ * tuple assertion so every schema infers LITERAL union types — which is what keeps
+ * the API layer free of `as` casts end to end.
+ */
+function enumFromConst<T extends string>(values: readonly T[]): z.ZodEnum<[T, ...T[]]> {
+  return z.enum(values as [T, ...T[]]);
+}
+
+export const venueIdSchema = enumFromConst(VENUE_IDS);
+export const scenarioSchema = enumFromConst(SCENARIOS);
+export const weatherPresetSchema = enumFromConst(WEATHER_PRESETS);
 
 /** Match-relative minute: gates open at -240 at the earliest; egress ends by +240. */
 export const minuteSchema = z.number().int().min(-240).max(240);
@@ -67,7 +77,7 @@ export const routingRequestSchema = z
     venueId: venueIdSchema,
     fromZoneId: z.string().trim().min(1).max(50).regex(NO_MARKUP),
     toZoneId: z.string().trim().min(1).max(50).regex(NO_MARKUP),
-    profile: z.enum(ACCESSIBILITY_PROFILES as unknown as [string, ...string[]]).default('none'),
+    profile: enumFromConst(ACCESSIBILITY_PROFILES).default('none'),
     scenario: scenarioSchema.default('normal'),
     minute: minuteSchema.default(30),
   })
@@ -76,7 +86,7 @@ export const routingRequestSchema = z
 export const egressRequestSchema = z
   .object({
     venueId: venueIdSchema,
-    mode: z.enum(EGRESS_MODES as unknown as [string, ...string[]]),
+    mode: enumFromConst(EGRESS_MODES),
     scenario: scenarioSchema.default('egress-surge'),
   })
   .strict();
@@ -92,8 +102,8 @@ export const incidentReportSchema = z
   .object({
     venueId: venueIdSchema,
     zoneId: z.string().trim().min(1).max(50).regex(NO_MARKUP),
-    category: z.enum(INCIDENT_CATEGORIES as unknown as [string, ...string[]]),
-    severity: z.enum(INCIDENT_SEVERITIES as unknown as [string, ...string[]]),
+    category: enumFromConst(INCIDENT_CATEGORIES),
+    severity: enumFromConst(INCIDENT_SEVERITIES),
     summary: displayText(240),
     minute: minuteSchema.default(30),
   })
@@ -102,7 +112,7 @@ export const incidentReportSchema = z
 export const entryFactsSchema = z
   .object({
     venueId: venueIdSchema,
-    ticketSource: z.enum(TICKET_SOURCES as unknown as [string, ...string[]]),
+    ticketSource: enumFromConst(TICKET_SOURCES),
     transferConfirmed: z.boolean(),
     idPacked: z.boolean(),
     bagCompliant: z.boolean(),
@@ -148,9 +158,9 @@ export const bootstrapSchema = z
 export const missionClaimSchema = z
   .object({
     userId: z.string().trim().min(1).max(60).regex(NO_MARKUP),
-    missionId: z.enum(MISSION_IDS as unknown as [string, ...string[]]),
+    missionId: enumFromConst(MISSION_IDS),
     minute: minuteSchema,
-    commuteMode: z.enum(COMMUTE_MODES as unknown as [string, ...string[]]).optional(),
+    commuteMode: enumFromConst(COMMUTE_MODES).optional(),
     commuteDistanceKm: z.number().min(0).max(500).optional(),
     advisedLeaveMinute: minuteSchema.optional(),
     heatProtocolActive: z.boolean().optional(),
@@ -159,7 +169,7 @@ export const missionClaimSchema = z
 
 export const leaderboardQuerySchema = z
   .object({
-    scope: z.enum(LEADERBOARD_SCOPES as unknown as [string, ...string[]]).default('venue'),
+    scope: enumFromConst(LEADERBOARD_SCOPES).default('venue'),
     venueId: venueIdSchema.optional(),
     sectionZoneId: z.string().trim().max(50).regex(NO_MARKUP).optional(),
     userId: z.string().trim().max(60).regex(NO_MARKUP).optional(),
