@@ -1,0 +1,112 @@
+@import 'tailwindcss';
+
+/* Design tokens — theme-aware. --on-primary is the dark-mode contrast fix:
+   white text on the teal primary fails AA in dark mode, so it flips to near-black. */
+:root {
+  --bg-0: #f4f7fb;
+  --bg-1: #ffffff;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-edge: rgba(15, 23, 42, 0.12);
+  --text: #0f1a2b;
+  --text-dim: #47566b;
+  --primary: #0f7d8c;
+  --on-primary: #ffffff;
+  --gold: #b5842a;
+  --danger: #b3261e;
+  --busy: #b06a00;
+  --ok: #1a7f4b;
+  --focus: #0b5cff;
+}
+
+:root[data-theme='dark'] {
+  --bg-0: #0b1220;
+  --bg-1: #101a30;
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-edge: rgba(255, 255, 255, 0.16);
+  --text: #eef2f7;
+  --text-dim: #b6c2d4;
+  --primary: #32b8c6;
+  /* near-black on teal = 12.8:1 (AA pass); white on teal was 2.0:1 (fail). */
+  --on-primary: #08131a;
+  --gold: #e8c15a;
+  --danger: #ff6b6b;
+  --busy: #ffb454;
+  --ok: #4ade80;
+  --focus: #7aa2ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg-0: #0b1220;
+    --bg-1: #101a30;
+    --surface: rgba(255, 255, 255, 0.06);
+    --surface-edge: rgba(255, 255, 255, 0.16);
+    --text: #eef2f7;
+    --text-dim: #b6c2d4;
+    --primary: #32b8c6;
+    --on-primary: #08131a;
+    --gold: #e8c15a;
+    --danger: #ff6b6b;
+    --busy: #ffb454;
+    --ok: #4ade80;
+    --focus: #7aa2ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 600px at 12% -10%, color-mix(in srgb, var(--primary) 16%, transparent) 0%, transparent 55%),
+    linear-gradient(160deg, var(--bg-0), var(--bg-1));
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+/* Visible focus ring everywhere — never removed. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Skip link: off-screen until focused. Target id = #main-content (documented). */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 12px 18px;
+  border-radius: 0 0 8px 0;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--surface-edge);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}

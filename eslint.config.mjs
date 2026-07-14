@@ -14,6 +14,8 @@ export default tseslint.config(
       '**/test-results/**',
       'docs/**',
       'infra/**',
+      '**/next-env.d.ts',
+      '**/.next/**',
     ],
   },
   js.configs.recommended,
