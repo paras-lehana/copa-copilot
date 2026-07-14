@@ -106,6 +106,7 @@ export default function OnboardingPage() {
         <select
           value={session.language}
           onChange={(e) => session.update({ language: e.target.value as LanguageCode })}
+          aria-label="Language"
           style={fieldStyle}
         >
           {SUPPORTED_LANGUAGES.map((l) => (

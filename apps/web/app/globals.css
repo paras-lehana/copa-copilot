@@ -12,9 +12,10 @@
   --primary: #0f7d8c;
   --on-primary: #ffffff;
   --gold: #b5842a;
-  --danger: #b3261e;
-  --busy: #b06a00;
-  --ok: #1a7f4b;
+  /* Semantic colours dark enough for white text to pass WCAG AA (>=4.5:1). */
+  --danger: #a01b14;
+  --busy: #8a5200;
+  --ok: #0f6b3f;
   --focus: #0b5cff;
 }
 
