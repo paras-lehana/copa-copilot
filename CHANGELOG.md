@@ -11,7 +11,7 @@ All notable changes to Copa Copilot. Format: [Keep a Changelog](https://keepacha
 ### Added
 - OpenAPI 3.1 contract ([openapi.yaml](openapi.yaml)); installable PWA manifest.
 - Evaluator docs: LICENSE, CONTRIBUTING, SUBMISSION_ARTIFACTS, SUGGESTIONS.
-- Corner-case/boundary test suites — total now **1,513 unit/integration/component + 52 e2e** (core 99.4% cov, API 92%).
+- Corner-case/boundary test suites — total now **1,515 unit/integration/component + 52 e2e** (core 99.4% cov, API 92%).
 
 ### Fixed
 - Weather tile blank when `Infinity` (no lightning) serialized to `null` — client schema now accepts it.

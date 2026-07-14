@@ -1,5 +1,10 @@
 # Copa Copilot — GenAI Smart-Stadium Copilot for FIFA World Cup 2026
 
+![license: MIT](https://img.shields.io/badge/license-MIT-informational)
+![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)
+![tests: 1567 passing](https://img.shields.io/badge/tests-1567%20passing-brightgreen)
+![core coverage: 99%](https://img.shields.io/badge/core%20coverage-99%25-brightgreen)
+
 > **Version 0.2.0** — a GenAI operations & fan copilot spanning all 16 World Cup 2026 venues, grounded in a deterministic stadium engine and built for the Hack2skill × Google PromptWars "Smart Stadiums & Tournament Operations" challenge.
 
 Copa Copilot gives every stakeholder in a World Cup stadium — fans, organizers, volunteers and venue staff — a conversational copilot that understands live crowd, transit, weather and accessibility conditions, and gives the operations room the same intelligence, summarised. Every answer is backed by an engine you can reproduce in a unit test, and the whole app runs with **zero API keys** in demo mode.
@@ -15,7 +20,7 @@ Copa Copilot gives every stakeholder in a World Cup stadium — fans, organizers
 ```bash
 # Version + service identity (matches this README, package.json and the git tag)
 curl https://copa-copilot-api-767171449038.us-central1.run.app/api/meta
-# → {"service":"copa-copilot-api","version":"0.1.0","uptimeSeconds":<n>}
+# → {"service":"copa-copilot-api","version":"0.2.0","uptimeSeconds":<n>}
 
 # Live crowd simulation for the MetLife final, post-match egress surge
 curl "https://copa-copilot-api-767171449038.us-central1.run.app/api/crowd/metlife?scenario=egress-surge&minute=130"
@@ -34,7 +39,10 @@ The June–July 2026 tournament exposed operational gaps that are documented, no
 - **Ingress failure.** At Arrowhead (Argentina–Algeria), only 2 of 7 complex gates opened — hours of backup, fans abandoning cars to walk over a mile to kickoff.
 - **Weather chaos.** Lightning suspended France–Iraq (Philadelphia) 2+ hours under FIFA's 8-mile rule; a heat dome pushed RealFeel to 100–110°F across open-air venues (only 5 of 16 are roofed).
 - **Ticket-trust breakdown.** "Ghost tickets" from third-party resale left fans denied entry at the gate after paying; the official app fragments ticketing into a second app with login loops.
-- **Sustainability blind spot.** An independent estimate put the tournament's footprint at ~7.8 Mt CO₂e — fans see none of it operationally.
+- **Sustainability blind spot.** An independent June 2026 estimate put the tournament's footprint at ~7.8 Mt CO₂e (more than double Qatar 2022), with **spectator + team transit ~87.8%** of it — yet fans see none of it operationally.
+- **Heat as a safety issue.** FIFA imposed **mandatory 3-minute hydration breaks each half**; wet-bulb temperatures at most host cities exceeded Qatar's winter World Cup.
+- **Empty seats vs. scanned attendance.** Multiple matches showed visible empty sections despite near-full reported attendance — FIFA attributed it to ticketed fans lingering in concourses (a real-time crowd-distribution gap).
+- **Ticketing affordability & resale.** Dynamic pricing pushed final tickets to ~$11,000; the day before kickoff ~25,000 tickets were sold directly vs. **170,000+ on resale** — a transparency/fair-access pain point.
 
 **The pivot:** every incumbent tool (the FIFA app, Lenovo digital twins, crowd-analytics platforms) is either a static wallet-plus-map or a control-room dashboard. **None gives individual stakeholders a context-aware, multilingual, GenAI copilot.** Copa Copilot is that reasoning layer.
 
@@ -58,7 +66,8 @@ Covers all eight challenge dimensions (navigation, crowd management, accessibili
 | Rubric axis | Evidence |
 |---|---|
 | **Code Quality** | TypeScript strict everywhere (`noUncheckedIndexedAccess`), zero `any` / `console.log` / `TODO` / `eslint-disable`, ESLint flat config over every workspace, `Result<T,AppError>` channel, one shared zod schema source. See [EVALUATION_MAPPING.md](EVALUATION_MAPPING.md). |
-| **Testing** | **1,513 tests** (1,333 core unit + 139 API integration + 41 web component) at **99.4% core statement coverage** (API 92%), plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
+| **Testing** | **1,515 tests** (1,333 core unit + 141 API integration + 41 web component) at **99.4% core statement coverage** (API 92%), plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
+| **AI evals** | An **evaluation harness for the assistant itself** — 100% grounded-faithfulness (no invented numbers), 100% adversarial-refusal recall, 100% localisation — gated in CI. See [EVALS.md](EVALS.md). |
 | **Security** | AI routed only through the llm-service proxy (never a direct provider call); zod `.strict()` validation, token-bucket rate limits, prompt-injection nonce boundary, PII-safe structured logs, Secret Manager key by reference, no CSP-with-`unsafe-inline`. See [SECURITY.md](SECURITY.md). |
 | **Accessibility** | axe-clean on **all 10 routes in light AND dark**, WCAG 2.1 AA, ARIA meters, keyboard-complete, RTL Arabic, theme-aware contrast. See [ACCESSIBILITY.md](ACCESSIBILITY.md). |
 | **Efficiency** | Zero-runtime-dep core, deterministic fallbacks (no retries), briefing cache, reply budgets, scale-to-zero Cloud Run. See [ARCHITECTURE.md](ARCHITECTURE.md). |
@@ -132,7 +141,7 @@ copa-copilot/
 ├── apps/api/src/                # Express on Cloud Run (119 tests)
 │   ├── server.ts                #   buildApp(config) factory (supertest-able)
 │   ├── routes/                  #   crowd, guidance, incidents, assistant, engagement, meta
-│   ├── services/                #   assistant (tools), briefing (cache), gemini-client, store
+│   ├── services/                #   assistant (tools), briefing (cache), llm-client, ai-eval, store
 │   └── middleware/              #   validate, rate-limit, logger (PII-safe)
 ├── apps/web/                    # Next.js App Router (11 routes, 31 component tests)
 │   ├── app/                     #   dashboard, onboarding, map, assistant, ops, volunteer, …

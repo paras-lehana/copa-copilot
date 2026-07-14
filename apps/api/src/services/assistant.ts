@@ -57,7 +57,7 @@ const INTENT_KEYWORDS: Record<Exclude<ToolId, 'refuse'>, readonly string[]> = {
   findSafeRoute: ['route', 'way to', 'get to', 'seat', 'section', 'how do i get', 'ruta', 'asiento', 'chemin', 'siège', 'مقعد', 'रास्ता', 'सीट', 'caminho', 'assento', 'wheelchair', 'silla de ruedas', 'fauteuil'],
   getCrowdStatus: ['crowd', 'busy', 'queue', 'line', 'wait', 'density', 'fila', 'cola', 'foule', 'attente', 'ازدحام', 'भीड़', 'multidão', 'congestion'],
   getExitAdvice: ['exit', 'leave', 'egress', 'train home', 'get out', 'after the match', 'salida', 'salir', 'sortie', 'مغادرة', 'निकास', 'saída', 'sair'],
-  getWeatherProtocol: ['weather', 'lightning', 'storm', 'rain', 'heat', 'hot', 'suspended', 'quel temps', 'chaleur', 'clima', 'tormenta', 'orage', 'météo', 'طقس', 'مौसम', 'मौसम', 'tempo', 'calor'],
+  getWeatherProtocol: ['weather', 'lightning', 'storm', 'rain', 'heat', 'hot', 'suspended', 'delay', 'quel temps', 'chaleur', 'clima', 'tormenta', 'orage', 'météo', 'lluvia', 'chuva', 'طقس', 'مطر', 'बारिश', 'रुक', 'मौसम', 'tempo', 'calor'],
   getEntryChecklist: ['ticket', 'entry', 'gate check', 'get in', 'resale', 'transfer', 'entrada', 'boleto', 'billet', 'entrée', 'تذكرة', 'टिकट', 'ingresso', 'bilhete'],
   getSustainability: ['sustainab', 'green', 'carbon', 'co2', 'recycl', 'refill', 'sostenib', 'durable', 'استدامة', 'हरित', 'sustentá'],
 };
@@ -101,7 +101,9 @@ export function executeTool(tool: ToolId, ctx: ToolContext): Result<ToolTrace, A
       return ok({
         tool,
         summary: `Busiest zone: ${busiest?.name ?? 'n/a'} at ${busiest?.densityPct ?? 0}% (${busiest?.status ?? 'n/a'}).`,
-        data: { phase: snap.phase, zones: snap.zones.slice(0, 8), transit: snap.transit },
+        // `busiest` is exposed alongside the sampled zones so the summary's numbers
+        // are always present in the grounded data (checked by the AI eval harness).
+        data: { phase: snap.phase, busiest, zones: snap.zones.slice(0, 8), transit: snap.transit },
       });
     }
     case 'findSafeRoute': {

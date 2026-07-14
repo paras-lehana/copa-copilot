@@ -7,10 +7,10 @@ Five layers, all runnable from a clean checkout with zero keys. The deterministi
 | Layer | Tool | Location | Count |
 |---|---|---|---|
 | Core unit | Vitest | `packages/core/src/*.test.ts` (one file per module + `boundaries.test.ts`) | **1,333** |
-| API integration | Vitest + Supertest (against `buildApp`, no live port) | `apps/api/src/__tests__/` | **139** |
+| API integration | Vitest + Supertest (against `buildApp`, no live port) | `apps/api/src/__tests__/` | **141** |
 | Web component | Vitest + Testing Library (jsdom) | `apps/web/**/__tests__/` | **41** |
 | E2E + a11y | Playwright + `@axe-core/playwright` | `e2e/` | **52** |
-| **Total** | | | **1,565** |
+| **Total** | | | **1,567** |
 
 ## Coverage (gated in CI)
 - **`@copa/core`: 99.4% statements** (thresholds enforced: lines/statements/functions ≥ 95, branches ≥ 90).

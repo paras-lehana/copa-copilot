@@ -21,7 +21,7 @@
 ## Testing
 | Evidence in code | Tests | Docs |
 |---|---|---|
-| 5 layers: core unit ([packages/core/src/*.test.ts](packages/core/src)), API integration ([apps/api/src/__tests__](apps/api/src/__tests__)), web component ([apps/web](apps/web)), e2e + axe ([e2e/](e2e)); coverage gated in CI | **1,513 unit/integration/component + 52 e2e**, core 99.4% stmts | TESTING.md |
+| 5 layers: core unit ([packages/core/src/*.test.ts](packages/core/src)), API integration ([apps/api/src/__tests__](apps/api/src/__tests__)), web component ([apps/web](apps/web)), e2e + axe ([e2e/](e2e)); coverage gated in CI | **1,515 unit/integration/component + 52 e2e**, core 99.4% stmts | TESTING.md |
 
 ## Accessibility
 | Evidence in code | Tests | Docs |
@@ -31,7 +31,12 @@
 ## Google Services
 | Evidence in code | Tests | Docs |
 |---|---|---|
-| Evidence-as-code catalog ([service-catalog.ts](packages/core/src/google/service-catalog.ts)) → `GET /api/google/services` ([meta.ts](apps/api/src/routes/meta.ts)) → `/google-services` page ([apps/web/app/google-services](apps/web/app/google-services/page.tsx)); Gemini client ([gemini-client.ts](apps/api/src/services/gemini-client.ts)); deploy uses Cloud Build/Run/Artifact Registry/Secret Manager/Logging ([scripts/deploy.ps1](scripts/deploy.ps1)) | `service-catalog.test.ts` honesty invariants; `security.test.ts` secret-absence | GOOGLE_SERVICES.md |
+| Evidence-as-code catalog ([service-catalog.ts](packages/core/src/google/service-catalog.ts)) → `GET /api/google/services` ([meta.ts](apps/api/src/routes/meta.ts)) → `/google-services` page ([apps/web/app/google-services](apps/web/app/google-services/page.tsx)); LLM client ([llm-client.ts](apps/api/src/services/llm-client.ts)); deploy uses Cloud Build/Run/Artifact Registry/Secret Manager/Logging ([scripts/deploy.ps1](scripts/deploy.ps1)) | `service-catalog.test.ts` honesty invariants; `security.test.ts` secret-absence | GOOGLE_SERVICES.md |
+
+## Novelty — AI evaluation harness
+| Evidence in code | Tests | Docs |
+|---|---|---|
+| The assistant is scored against the engine ground truth: faithfulness (no invented numbers), refusal recall, localisation ([apps/api/src/services/ai-eval.ts](apps/api/src/services/ai-eval.ts)) | `ai-eval.test.ts` — 100% on all three, gated in CI | EVALS.md |
 
 ## Problem Alignment
-Every feature traces to a documented June–July 2026 incident (README "The problem"). All 8 challenge dimensions and 4 personas are covered and named.
+Every feature traces to a documented June–July 2026 incident (README "The problem"): MetLife 3-hour egress strand, Arrowhead 2-of-7 gates, mandatory 3-min hydration breaks, empty-seats-vs-scanned gap, $11k finals / 170k resale, 7.8 Mt CO₂e (87.8% transit). All 8 challenge dimensions and 4 personas are covered and named.
