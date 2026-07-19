@@ -5,11 +5,11 @@
 // computed and its legs listed. Zones are coloured by density tier.
 
 import { useState } from 'react';
-import { crowdResponseSchema, routeResponseSchema } from '../../lib/contracts';
+import { type RouteResponse, crowdResponseSchema, routeResponseSchema } from '../../lib/contracts';
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { Button, DensityMeter, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { Button, DensityMeter, Panel, RetryCard, Skeleton, Stack, StatusPill } from '../../components/ui';
 import { CALM_VIEW } from '../../lib/scenarios';
 
 const STATUS_FILL: Record<string, string> = {
@@ -25,9 +25,7 @@ export default function MapPage() {
     crowdResponseSchema,
     [session.venueId],
   );
-  const [route, setRoute] = useState<
-    { legs: { toZoneName: string; meters: number; stepFree: boolean; zoneStatus: string; instruction: string }[]; explanation: string; risk: string } | undefined
-  >(undefined);
+  const [route, setRoute] = useState<RouteResponse['route'] | undefined>(undefined);
   const [routeError, setRouteError] = useState<string | undefined>(undefined);
 
   async function computeRoute() {
@@ -50,17 +48,14 @@ export default function MapPage() {
   const zones = crowd.data?.snapshot.zones ?? [];
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>Stadium map — {session.venueId}</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+    <Stack>
+      <h1 className="mb-0">Stadium map — {session.venueId}</h1>
+      <p className="text-[var(--text-dim)] mt-0">
         Zones are shaded by live density. Use the list below with a screen reader, or compute a route
         that respects your accessibility profile ({session.accessibility}).
       </p>
 
-      <section aria-labelledby="map-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="map-h" style={{ marginTop: 0 }}>
-          Live density map
-        </h2>
+      <Panel id="map-h" title="Live density map" icon="🗺️">
         {crowd.loading && <Skeleton height={180} />}
         {crowd.error !== undefined && <RetryCard message={crowd.error} onRetry={crowd.reload} />}
         {crowd.data !== undefined && (
@@ -90,16 +85,13 @@ export default function MapPage() {
             })}
           </svg>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="list-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="list-h" style={{ marginTop: 0 }}>
-          Zones (text list)
-        </h2>
+      <Panel id="list-h" title="Zones (text list)" icon="📋">
         {zones.length === 0 ? (
           <Skeleton />
         ) : (
-          <ul role="list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <ul role="list" className="list-none p-0 m-0">
             {zones.map((z) => (
               <li key={z.zoneId}>
                 <DensityMeter label={`${z.name} (${z.kind})`} pct={z.densityPct} status={z.status} />
@@ -107,33 +99,30 @@ export default function MapPage() {
             ))}
           </ul>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="route-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="route-h" style={{ marginTop: 0 }}>
-          Route to my seat
-        </h2>
+      <Panel id="route-h" title="Route to my seat" icon="🧭">
         <Button onClick={() => void computeRoute()}>Compute {session.accessibility} route</Button>
         {routeError !== undefined && (
-          <p role="alert" style={{ color: 'var(--danger)' }}>
+          <p role="alert" className="text-[var(--danger)]">
             {routeError}
           </p>
         )}
         {route !== undefined && (
-          <div style={{ marginTop: 12 }}>
-            <p role="status" style={{ fontWeight: 600 }}>
+          <div className="mt-3">
+            <p role="status" className="font-semibold">
               {route.explanation} <StatusPill status={route.risk === 'safe' ? 'comfortable' : route.risk === 'caution' ? 'busy' : 'critical'} />
             </p>
-            <ol style={{ paddingInlineStart: 20 }}>
-              {route.legs.map((leg, i) => (
-                <li key={i} style={{ marginBottom: 6 }}>
+            <ol className="ps-5">
+              {route.legs.map((leg) => (
+                <li key={`${leg.fromZoneId}-${leg.toZoneId}`} className="mb-1.5">
                   {leg.instruction} {leg.stepFree ? '♿ step-free' : '↑ stairs'}
                 </li>
               ))}
             </ol>
           </div>
         )}
-      </section>
-    </div>
+      </Panel>
+    </Stack>
   );
 }

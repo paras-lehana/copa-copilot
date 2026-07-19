@@ -15,9 +15,16 @@ Responsible, defence-in-depth implementation sized to a hackathon prototype. No 
 | 7 | **DoS** | Per-IP token buckets: 60/min general, 10/min assistant; 32 kb JSON body cap; `--max-instances=3` | `rate-limit.ts`, `server.ts`, `cloudbuild-api.yaml` |
 | 8 | **Elevation** — prompt injection | Per-request nonce fence around user input + `VERIFIED_STADIUM_DATA` grounding; refusal rules; 10-attack red-team suite | `prompt-boundary.ts`, `assistant.test.ts` |
 | 9 | **Elevation** — point minting | Client-restored points clamped server-side to a max; mission replay rejected | `gamification.ts` (`clampRestoredPoints`), `engagement.ts` |
+| 10 | **Elevation** — Trojan-Source / bidi steganography | Unicode sanitiser strips C0/C1 control, zero-width and bidi-override characters from free text *after* zod, *before* the model — complements the nonce fence | `apps/api/src/middleware/sanitize.ts`, `assistant.ts` |
+| 11 | **SSRF** — key-bearing upstream redirection | Allow-list guard: the llm-service call refuses any non-HTTPS or non-allow-listed host (blocks cloud-metadata/VPC exfil of the key) | `apps/api/src/services/llm-client.ts` (`isAllowedLlmUrl`) |
+| 12 | **Misconfiguration** — unsafe production deploy | Fail-closed startup self-test aborts prod boot on a wildcard/plaintext CORS origin or a plaintext upstream; warns on graceful degradations | `apps/api/src/services/security-selftest.ts`, `main.ts` |
+| 13 | **Repudiation** — untraceable requests | Per-request correlation id (`X-Request-Id`), safe inbound id validated `/^[A-Za-z0-9-]{1,64}$/`, echoed for client↔log tie-up without logging content | `apps/api/src/middleware/request-id.ts` |
 
 ## Error envelope
 Every failure returns exactly `{ "error": { "code", "message" } }` with a localized, safe message and no internals. Server-only diagnostics live in an `AppError.diagnostics` field that is never serialized (asserted by tests).
+
+## Fail-closed startup self-test
+Before the API binds a socket, `runSecuritySelfTest(config)` audits the *assembled* runtime configuration — the misconfigurations that no handler unit-test would catch. **Critical** findings (a wildcard CORS origin, a non-HTTPS/non-allow-listed key-bearing upstream) abort the boot in production (`process.exit(1)`); **warnings** (e.g. the graceful "no key ⇒ demo path" degradation) are logged and tolerated. The check is a pure function, so every branch is unit-tested; the 42-test `security.test.ts` suite covers the sanitiser, the SSRF allow-list, correlation ids and every self-test finding.
 
 ## Content-Security-Policy — a deliberate choice
 The API sends `default-src 'none'`. The **web origin ships the safe hardening headers** (nosniff, X-Frame-Options DENY, Referrer-Policy, HSTS, Permissions-Policy) **but no CSP** — a CSP that would require `'unsafe-inline'` to keep Next.js hydration working documents its own bypass and scores worse than its absence. A hash-based CSP is the planned upgrade.

@@ -26,6 +26,24 @@ export interface LlmClientOptions {
 }
 
 /**
+ * SSRF guard: the llm-service base URL comes from the environment, so before we ever
+ * attach the internal key and POST, we confirm the target is HTTPS on an allow-listed
+ * host (or localhost for tests). This stops an injected LLM_SERVICE_URL from redirecting
+ * a key-bearing request at an internal metadata endpoint.
+ */
+const ALLOWED_LLM_HOSTS = new Set(['llm.lehana.in', 'localhost', '127.0.0.1', 'llm.example']);
+
+export function isAllowedLlmUrl(baseUrl: string): boolean {
+  try {
+    const url = new URL(baseUrl);
+    const httpsOrLocal = url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    return httpsOrLocal && ALLOWED_LLM_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Call the llm-service SMK endpoint with a system + user turn.
  * Returns Result — callers degrade to the deterministic demo path, never crash.
  */
@@ -36,6 +54,10 @@ export async function llmComplete(
 ): Promise<Result<string, AppError>> {
   const fetchFn = options.fetchFn ?? fetch;
   const timeoutMs = options.timeoutMs ?? 25_000;
+  // SSRF guard — refuse to send the key anywhere but an allow-listed HTTPS host.
+  if (!isAllowedLlmUrl(options.baseUrl)) {
+    return err(appError('UPSTREAM_FAILURE', 'llm-service URL is not an allowed host'));
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

@@ -10,7 +10,7 @@ import { profileSchema, venuesResponseSchema } from '../../lib/contracts';
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { type AccessibilityProfile, type Persona, useSession } from '../../lib/session';
-import { Button, GlassCard } from '../../components/ui';
+import { Button, Muted, Panel, Stack } from '../../components/ui';
 
 const PERSONAS: readonly { id: Persona; label: string; blurb: string }[] = [
   { id: 'fan', label: 'Fan', blurb: 'Navigation, exits, missions and tickets.' },
@@ -51,36 +51,34 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>Set up Copa Copilot</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>Four quick choices — no account, no personal data.</p>
+    <Stack gap={4}>
+      <h1 className="mb-0">Set up Copa Copilot</h1>
+      <Muted className="mt-0">Four quick choices — no account, no personal data.</Muted>
 
-      <GlassCard as="section" labelledBy="p-h">
-        <h2 id="p-h" style={{ marginTop: 0 }}>1. Who are you?</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 10 }}>
+      <Panel id="p-h" title="1. Who are you?" icon="🙋">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
           {PERSONAS.map((p) => (
             <button
               key={p.id}
               onClick={() => session.update({ persona: p.id })}
               aria-pressed={session.persona === p.id}
-              style={optionStyle(session.persona === p.id)}
+              className={optionClass(session.persona === p.id)}
             >
               <strong>{p.label}</strong>
-              <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{p.blurb}</span>
+              <span className="text-[13px] text-[var(--text-dim)]">{p.blurb}</span>
             </button>
           ))}
         </div>
-      </GlassCard>
+      </Panel>
 
-      <GlassCard as="section" labelledBy="v-h">
-        <h2 id="v-h" style={{ marginTop: 0 }}>2. Which venue &amp; seat?</h2>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontSize: 13 }}>Venue</span>
+      <Panel id="v-h" title="2. Which venue & seat?" icon="🏟️">
+        <div className="flex gap-2.5 flex-wrap">
+          <label className="grid gap-1">
+            <span className="text-[13px]">Venue</span>
             <select
               value={session.venueId}
               onChange={(e) => session.update({ venueId: e.target.value })}
-              style={fieldStyle}
+              className={fieldClass}
             >
               {venues.data?.venues.map((v) => (
                 <option key={v.id} value={v.id}>
@@ -89,25 +87,24 @@ export default function OnboardingPage() {
               ))}
             </select>
           </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontSize: 13 }}>Seat / section</span>
+          <label className="grid gap-1">
+            <span className="text-[13px]">Seat / section</span>
             <input
               value={session.sectionZoneId}
               onChange={(e) => session.update({ sectionZoneId: e.target.value })}
               autoComplete="off"
-              style={fieldStyle}
+              className={fieldClass}
             />
           </label>
         </div>
-      </GlassCard>
+      </Panel>
 
-      <GlassCard as="section" labelledBy="l-h">
-        <h2 id="l-h" style={{ marginTop: 0 }}>3. Language</h2>
+      <Panel id="l-h" title="3. Language" icon="🌐">
         <select
           value={session.language}
           onChange={(e) => session.update({ language: resolveLanguage(e.target.value) })}
           aria-label="Language"
-          style={fieldStyle}
+          className={fieldClass}
         >
           {SUPPORTED_LANGUAGES.map((l) => (
             <option key={l.code} value={l.code}>
@@ -115,59 +112,46 @@ export default function OnboardingPage() {
             </option>
           ))}
         </select>
-      </GlassCard>
+      </Panel>
 
-      <GlassCard as="section" labelledBy="a-h">
-        <h2 id="a-h" style={{ marginTop: 0 }}>4. Accessibility</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 10 }}>
+      <Panel id="a-h" title="4. Accessibility" icon="♿">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
           {ACCESS.map((a) => (
             <button
               key={a.id}
               onClick={() => session.update({ accessibility: a.id })}
               aria-pressed={session.accessibility === a.id}
-              style={optionStyle(session.accessibility === a.id)}
+              className={optionClass(session.accessibility === a.id)}
             >
               <strong>{a.label}</strong>
-              <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{a.blurb}</span>
+              <span className="text-[13px] text-[var(--text-dim)]">{a.blurb}</span>
             </button>
           ))}
         </div>
-      </GlassCard>
+      </Panel>
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div className="flex gap-2.5 items-center">
         <Button onClick={() => void finish()} disabled={saving} aria-disabled={saving}>
           {saving ? 'Saving…' : 'Finish setup'}
         </Button>
         {done && (
-          <span role="status" style={{ color: 'var(--ok)', fontWeight: 600 }}>
+          <span role="status" className="text-[var(--ok)] font-semibold">
             Ready! Head to the dashboard or assistant.
           </span>
         )}
       </div>
-    </div>
+    </Stack>
   );
 }
 
-const fieldStyle: React.CSSProperties = {
-  minHeight: 44,
-  borderRadius: 8,
-  padding: '6px 10px',
-  background: 'var(--bg-1)',
-  color: 'var(--text)',
-  border: '1px solid var(--surface-edge)',
-};
+const fieldClass =
+  'min-h-[44px] rounded-lg py-1.5 px-2.5 bg-[var(--bg-1)] text-[var(--text)] border border-[var(--surface-edge)]';
 
-function optionStyle(active: boolean): React.CSSProperties {
-  return {
-    display: 'grid',
-    gap: 4,
-    textAlign: 'start',
-    padding: 14,
-    minHeight: 44,
-    borderRadius: 12,
-    cursor: 'pointer',
-    background: active ? 'color-mix(in srgb, var(--primary) 18%, transparent)' : 'transparent',
-    border: `2px solid ${active ? 'var(--primary)' : 'var(--surface-edge)'}`,
-    color: 'var(--text)',
-  };
+function optionClass(active: boolean): string {
+  return [
+    'grid gap-1 text-start p-3.5 min-h-[44px] rounded-xl cursor-pointer border-2 text-[var(--text)]',
+    active
+      ? 'bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] border-[var(--primary)]'
+      : 'bg-transparent border-[var(--surface-edge)]',
+  ].join(' ');
 }

@@ -7,6 +7,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import { appError } from '@copa/core';
 import { type AppConfig } from './config';
 import { type LogSink, requestLogger, stdoutSink } from './middleware/logger';
+import { requestId } from './middleware/request-id';
 import { TokenBucketLimiter, rateLimit } from './middleware/rate-limit';
 import { sendError } from './middleware/validate';
 import { assistantRouter } from './routes/assistant';
@@ -66,6 +67,7 @@ export function buildApp(
   });
 
   app.use(express.json({ limit: BODY_LIMIT }));
+  app.use(requestId(config.now));
   app.use(requestLogger(sink, config.now));
 
   const generalLimiter = new TokenBucketLimiter('general', config.now);

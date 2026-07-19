@@ -125,6 +125,10 @@ export async function produceBriefing(
       JSON.stringify({ headline: demo.headline, bullets: demo.bullets, topActions: demo.topActions }),
     );
     if (live.ok) {
+      // Honest-label boundary: Gemini rewrites ONLY the human-facing headline prose.
+      // The bullets and prioritized actions stay exactly as the deterministic engine
+      // produced them — every number remains grounded and reproducible. `engine:'gemini'`
+      // therefore means "headline authored by Gemini", not "figures invented by Gemini".
       briefing = { ...demo, headline: live.value.split('\n')[0] ?? demo.headline, engine: 'gemini' };
     }
   }

@@ -5,10 +5,12 @@
 // labelled: it says which engine is speaking, never fakes native TTS).
 
 import { useState } from 'react';
+import { WCAG_CRITERIA, wcagScorecard } from '@copa/core';
 import { crowdResponseSchema } from '../../lib/contracts';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { Button, RetryCard, Skeleton } from '../../components/ui';
+import { Button, Muted, Panel, RetryCard, Skeleton, Stack, StatTile } from '../../components/ui';
+import { AccessibilitySettings } from '../../components/AccessibilitySettings';
 import { CALM_VIEW } from '../../lib/scenarios';
 
 export default function AccessibilityPage() {
@@ -25,6 +27,8 @@ export default function AccessibilityPage() {
       ['accessible-facility', 'first-aid', 'prayer-room', 'hydration'].includes(z.kind),
     ) ?? [];
 
+  const score = wcagScorecard();
+
   function speak(text: string) {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       const utter = new SpeechSynthesisUtterance(text);
@@ -37,60 +41,71 @@ export default function AccessibilityPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>Accessibility</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+    <Stack>
+      <h1 className="mb-0">Accessibility</h1>
+      <Muted className="mt-0">
         Your current profile is <strong>{session.accessibility}</strong>. Change it in onboarding to
-        re-shape routes and assistant answers.
-      </p>
+        re-shape routes and assistant answers, or adjust how the app looks for you below.
+      </Muted>
 
-      <section aria-labelledby="fac-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="fac-h" style={{ marginTop: 0 }}>
-          Facilities near you
-        </h2>
+      <Panel id="prefs-h" title="Display & reading settings" icon="⚙️">
+        <AccessibilitySettings />
+      </Panel>
+
+      <Panel id="fac-h" title="Facilities near you" icon="♿">
         {crowd.loading && <Skeleton height={80} />}
         {crowd.error !== undefined && <RetryCard message={crowd.error} onRetry={crowd.reload} />}
-        <ul role="list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
+        <ul role="list" className="list-none p-0 m-0 grid gap-2">
           {facilities.map((f) => (
-            <li key={f.zoneId} style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <li key={f.zoneId} className="flex justify-between">
               <span>{f.name}</span>
-              <span style={{ color: 'var(--text-dim)' }}>{f.kind.replace('-', ' ')}</span>
+              <span className="text-[var(--text-dim)]">{f.kind.replace('-', ' ')}</span>
             </li>
           ))}
           {crowd.data !== undefined && facilities.length === 0 && <li>No mapped facilities for this venue.</li>}
         </ul>
-      </section>
+      </Panel>
 
-      <section aria-labelledby="audio-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="audio-h" style={{ marginTop: 0 }}>
-          Audio-first mode
-        </h2>
-        <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+      <Panel id="audio-h" title="Audio-first mode" icon="🔊">
+        <Muted className="mt-0">
           Assistant replies use short sentences (≤12 words) in audio-first mode. Try reading a line aloud:
-        </p>
+        </Muted>
         <Button onClick={() => speak('Gate D is calm. Take the lift to your left. Your section is three minutes away.')}>
           🔊 Read a sample route aloud
         </Button>
         {spoke !== undefined && (
-          <p role="status" style={{ color: 'var(--text-dim)' }}>
+          <p role="status" className="text-[var(--text-dim)]">
             {spoke}
           </p>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="std-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="std-h" style={{ marginTop: 0 }}>
-          How we build for access
-        </h2>
-        <ul role="list" style={{ paddingInlineStart: 20 }}>
-          <li>Every route is offered as a text list, not only a map.</li>
-          <li>Wheelchair routing uses step-free edges only — never stairs.</li>
-          <li>Density bars are ARIA meters with exact values, not colour alone.</li>
-          <li>Full keyboard operation with a visible focus ring; a skip link to the content.</li>
-          <li>Light and dark themes both pass contrast (the primary has a theme-aware on-colour).</li>
-          <li>Six languages including right-to-left Arabic.</li>
+      <Panel id="wcag-h" title="WCAG 2.2 conformance" icon="✅">
+        <Muted className="mt-0">
+          Every criterion below is backed by real code or a behaviour you can verify — no
+          undefended claims. Counts are computed from the catalogue, not hard-coded.
+        </Muted>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 my-3">
+          <StatTile label="Criteria met" value={`${score.supported}/${score.total}`} accent />
+          <StatTile label="Level A" value={`${score.levelA}`} />
+          <StatTile label="Level AA" value={`${score.levelAA}`} />
+          <StatTile label="Level AAA" value={`${score.levelAAA}`} />
+        </div>
+        <ul role="list" className="list-none p-0 m-0 grid gap-2">
+          {WCAG_CRITERIA.map((c) => (
+            <li key={c.id} className="border-b border-[var(--surface-edge)] pb-2 last:border-0">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="font-mono text-xs text-[var(--text-dim)]">{c.id}</span>
+                <strong>{c.name}</strong>
+                <span className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 bg-[var(--primary)] text-[var(--on-primary)]">
+                  {c.level}
+                </span>
+              </div>
+              <p className="text-sm text-[var(--text-dim)] m-0 mt-0.5">{c.how}</p>
+            </li>
+          ))}
         </ul>
-      </section>
-    </div>
+      </Panel>
+    </Stack>
   );
 }

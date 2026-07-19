@@ -135,7 +135,7 @@ export function DensityMeter({ label, pct, status }: { label: string; pct: numbe
 
 /** A loading skeleton block. */
 export function Skeleton({ height = 20 }: { height?: number }): ReactNode {
-  return <div aria-hidden="true" className="glass-card mb-2 opacity-50" style={{ height, borderRadius: 10 }} />;
+  return <div aria-hidden="true" className="glass-card mb-2 opacity-50 rounded-[10px]" style={{ height }} />;
 }
 
 /** An error card with a retry button and a role=alert live region. */
@@ -157,5 +157,47 @@ export function SectionTitle({ id, icon, children }: { id: string; icon?: string
       {icon !== undefined && <span aria-hidden="true">{icon}</span>}
       {children}
     </h2>
+  );
+}
+
+/** A vertical layout with consistent spacing — replaces ad-hoc grid/gap inline styles. */
+export function Stack({ children, gap = 4, className = '' }: { children: ReactNode; gap?: 2 | 3 | 4; className?: string }): ReactNode {
+  const gapCls = gap === 2 ? 'gap-2' : gap === 3 ? 'gap-3' : 'gap-4';
+  return <div className={`grid ${gapCls} ${className}`}>{children}</div>;
+}
+
+/** Muted secondary text — one place for the `--text-dim` treatment. */
+export function Muted({ children, className = '' }: { children: ReactNode; className?: string }): ReactNode {
+  return <p className={`text-sm text-[var(--text-dim)] ${className}`}>{children}</p>;
+}
+
+/**
+ * A labelled glass section with a heading — the primary page region wrapper. Renders
+ * a `<section aria-labelledby>` landmark so every page keeps a consistent, accessible
+ * structure without repeating the glass+padding+heading scaffolding.
+ */
+export function Panel({
+  id,
+  title,
+  icon,
+  titleExtra,
+  children,
+}: {
+  id: string;
+  title: string;
+  icon?: string;
+  titleExtra?: ReactNode;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <section aria-labelledby={id} className="glass-card p-5">
+      <div className="flex items-center justify-between">
+        <SectionTitle id={id} icon={icon}>
+          {title}
+        </SectionTitle>
+        {titleExtra}
+      </div>
+      {children}
+    </section>
   );
 }

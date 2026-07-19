@@ -10,7 +10,7 @@ import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
 import { z } from 'zod';
-import { RetryCard, Skeleton, StatTile } from '../../components/ui';
+import { Muted, Panel, RetryCard, Skeleton, Stack, StatTile } from '../../components/ui';
 import { catalog } from '../../lib/strings';
 
 const awardSchema = z.object({
@@ -58,51 +58,50 @@ export default function MissionsPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>{strings.yourMissions}</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+    <Stack>
+      <h1 className="mb-0">{strings.yourMissions}</h1>
+      <Muted className="mt-0">
         Every mission changes a real operational metric — points are computed by the engine.
-      </p>
+      </Muted>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 12 }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
         <StatTile label="Points" value={String(points)} />
         <StatTile label="Level" value={String(level)} />
         <StatTile label="Completed" value={`${done.size}/5`} />
       </div>
 
       {feedback !== undefined && (
-        <p role="status" className="glass" style={{ padding: 12, fontWeight: 600 }}>
+        <p role="status" className="glass-card p-3 font-semibold">
           {feedback}
         </p>
       )}
 
-      <section aria-labelledby="m-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="m-h" style={{ marginTop: 0 }}>
-          Missions
-        </h2>
+      <Panel id="m-h" title="Missions" icon="🎯">
         {missions.loading && <Skeleton height={80} />}
         {missions.error !== undefined && <RetryCard message={missions.error} onRetry={missions.reload} />}
-        <ul role="list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
+        <ul role="list" className="list-none p-0 m-0 grid gap-2.5">
           {missions.data?.missions.map((m) => (
-            <li key={m.id} className="glass" style={{ padding: 14 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+            <li key={m.id} className="glass-card p-3.5">
+              <div className="flex gap-2 items-baseline">
                 <strong>{m.title}</strong>
-                <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>+{m.basePoints} base</span>
-                {done.has(m.id) && <span style={{ marginInlineStart: 'auto', color: 'var(--ok)' }}>✓ done</span>}
+                <span className="text-[13px] text-[var(--text-dim)]">+{m.basePoints} base</span>
+                {done.has(m.id) && <span className="ms-auto text-[var(--ok)]">✓ done</span>}
               </div>
-              <p style={{ margin: '6px 0 10px', color: 'var(--text-dim)' }}>{m.description}</p>
+              <p className="mt-1.5 mb-2.5 mx-0 text-[var(--text-dim)]">{m.description}</p>
               <button
                 onClick={() => void complete(m.id)}
                 disabled={done.has(m.id)}
                 aria-disabled={done.has(m.id)}
-                style={{ minHeight: 44, padding: '8px 16px', borderRadius: 10, background: done.has(m.id) ? 'var(--surface-edge)' : 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: done.has(m.id) ? 'default' : 'pointer' }}
+                className={`min-h-[44px] py-2 px-4 rounded-[10px] text-[var(--on-primary)] border-0 font-semibold ${
+                  done.has(m.id) ? 'bg-[var(--surface-edge)] cursor-default' : 'bg-[var(--primary)] cursor-pointer'
+                }`}
               >
                 {done.has(m.id) ? 'Completed' : 'Complete mission'}
               </button>
             </li>
           ))}
         </ul>
-      </section>
-    </div>
+      </Panel>
+    </Stack>
   );
 }

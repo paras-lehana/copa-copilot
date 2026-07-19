@@ -10,7 +10,7 @@ import { ASSISTANT_MINUTE, FAN_VIEW } from '../../lib/scenarios';
 import { apiPost } from '../../lib/api-client';
 import { useSession } from '../../lib/session';
 import { catalog } from '../../lib/strings';
-import { GlassCard } from '../../components/ui';
+import { GlassCard, Stack, Muted } from '../../components/ui';
 
 interface Turn {
   role: 'user' | 'assistant';
@@ -69,20 +69,20 @@ export default function AssistantPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>{strings.nav_assistant}</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+    <Stack>
+      <h1 className="mb-0">{strings.nav_assistant}</h1>
+      <Muted className="mt-0">
         Grounded in live venue data. Answers as <strong>{session.persona}</strong> in{' '}
         <strong>{session.language}</strong>.
-      </p>
+      </Muted>
 
       <GlassCard>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        <div className="flex flex-wrap gap-2 mb-3">
           {(SUGGESTIONS[session.persona] ?? SUGGESTIONS.fan ?? []).map((s) => (
             <button
               key={s}
               onClick={() => void ask(s)}
-              style={{ minHeight: 40, padding: '6px 12px', borderRadius: 999, fontSize: 13, cursor: 'pointer', background: 'transparent', border: '1px solid var(--surface-edge)', color: 'var(--text)' }}
+              className="min-h-[40px] px-3 py-1.5 rounded-full text-[13px] cursor-pointer bg-transparent border border-[var(--surface-edge)] text-[var(--text)]"
             >
               {s}
             </button>
@@ -93,27 +93,23 @@ export default function AssistantPage() {
           role="log"
           aria-live="polite"
           aria-label="Conversation"
-          style={{ display: 'grid', gap: 10, minHeight: 120, marginBottom: 12 }}
+          className="grid gap-2.5 min-h-[120px] mb-3"
         >
           {turns.length === 0 && (
-            <p style={{ color: 'var(--text-dim)' }}>Ask something, or tap a suggestion above.</p>
+            <p className="text-[var(--text-dim)]">Ask something, or tap a suggestion above.</p>
           )}
           {turns.map((turn, i) => (
             <div
               key={i}
-              style={{
-                justifySelf: turn.role === 'user' ? 'end' : 'start',
-                maxWidth: '85%',
-                padding: '10px 14px',
-                borderRadius: 12,
-                background: turn.role === 'user' ? 'var(--primary)' : 'var(--surface)',
-                color: turn.role === 'user' ? 'var(--on-primary)' : 'var(--text)',
-                border: turn.role === 'assistant' ? '1px solid var(--surface-edge)' : 'none',
-              }}
+              className={`max-w-[85%] py-2.5 px-3.5 rounded-xl ${
+                turn.role === 'user'
+                  ? 'justify-self-end bg-[var(--primary)] text-[var(--on-primary)]'
+                  : 'justify-self-start bg-[var(--surface)] text-[var(--text)] border border-[var(--surface-edge)]'
+              }`}
             >
-              <p style={{ margin: 0 }}>{turn.text}</p>
+              <p className="m-0">{turn.text}</p>
               {turn.role === 'assistant' && turn.tool !== undefined && (
-                <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-dim)' }}>
+                <p className="mt-1.5 mx-0 mb-0 text-xs text-[var(--text-dim)]">
                   ⚡ {turn.tool} · {turn.engine === 'gemini' ? 'Gemini' : 'demo engine'}
                 </p>
               )}
@@ -126,9 +122,9 @@ export default function AssistantPage() {
             e.preventDefault();
             void ask(input);
           }}
-          style={{ display: 'flex', gap: 8 }}
+          className="flex gap-2"
         >
-          <label htmlFor="ask" style={{ position: 'absolute', left: -9999 }}>
+          <label htmlFor="ask" className="sr-only">
             {strings.askPlaceholder}
           </label>
           <input
@@ -139,18 +135,18 @@ export default function AssistantPage() {
             placeholder={strings.askPlaceholder}
             maxLength={1000}
             autoComplete="off"
-            style={{ flex: 1, minHeight: 44, borderRadius: 10, padding: '8px 12px', background: 'var(--bg-1)', color: 'var(--text)', border: '1px solid var(--surface-edge)' }}
+            className="flex-1 min-h-[44px] rounded-[10px] py-2 px-3 bg-[var(--bg-1)] text-[var(--text)] border border-[var(--surface-edge)]"
           />
           <button
             type="submit"
             disabled={busy}
             aria-disabled={busy}
-            style={{ minHeight: 44, padding: '0 18px', borderRadius: 10, background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: 'pointer' }}
+            className="min-h-[44px] px-[18px] py-0 rounded-[10px] bg-[var(--primary)] text-[var(--on-primary)] border-0 font-semibold cursor-pointer"
           >
             {busy ? '…' : strings.send}
           </button>
         </form>
       </GlassCard>
-    </div>
+    </Stack>
   );
 }

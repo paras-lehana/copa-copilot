@@ -58,13 +58,17 @@ function enumFromConst<T extends string>(values: readonly T[]): z.ZodEnum<[T, ..
   return z.enum(values as [T, ...T[]]);
 }
 
+/** Validates a venue id against the known VENUE_IDS enum. */
 export const venueIdSchema = enumFromConst(VENUE_IDS);
+/** Validates a crowd/simulation scenario id against the SCENARIOS enum. */
 export const scenarioSchema = enumFromConst(SCENARIOS);
+/** Validates a weather preset id against the WEATHER_PRESETS enum. */
 export const weatherPresetSchema = enumFromConst(WEATHER_PRESETS);
 
 /** Match-relative minute: gates open at -240 at the earliest; egress ends by +240. */
 export const minuteSchema = z.number().int().min(-240).max(240);
 
+/** Crowd query request contract (shared with web); defaults scenario to 'normal' and minute to 30. */
 export const crowdQuerySchema = z
   .object({
     scenario: scenarioSchema.default('normal'),
@@ -72,6 +76,7 @@ export const crowdQuerySchema = z
   })
   .strict();
 
+/** Routing request contract (shared with web); defaults profile to 'none', scenario to 'normal', minute to 30. */
 export const routingRequestSchema = z
   .object({
     venueId: venueIdSchema,
@@ -83,6 +88,7 @@ export const routingRequestSchema = z
   })
   .strict();
 
+/** Egress request contract (shared with web); defaults scenario to 'egress-surge'. */
 export const egressRequestSchema = z
   .object({
     venueId: venueIdSchema,
@@ -91,6 +97,7 @@ export const egressRequestSchema = z
   })
   .strict();
 
+/** Weather query contract (shared with web); defaults preset to 'clear-day' and minute to 30. */
 export const weatherQuerySchema = z
   .object({
     preset: weatherPresetSchema.default('clear-day'),
@@ -98,6 +105,7 @@ export const weatherQuerySchema = z
   })
   .strict();
 
+/** Incident report submission contract (shared with web); defaults minute to 30. */
 export const incidentReportSchema = z
   .object({
     venueId: venueIdSchema,
@@ -109,6 +117,7 @@ export const incidentReportSchema = z
   })
   .strict();
 
+/** Entry-readiness facts contract (shared with web); all boolean flags required, no defaults. */
 export const entryFactsSchema = z
   .object({
     venueId: venueIdSchema,
@@ -119,6 +128,7 @@ export const entryFactsSchema = z
   })
   .strict();
 
+/** Assistant query contract (shared with web); defaults persona 'fan', literacyTier 'standard', scenario 'normal', minute 30. */
 export const assistantQuerySchema = z
   .object({
     message: z
@@ -135,6 +145,7 @@ export const assistantQuerySchema = z
   })
   .strict();
 
+/** Briefing request contract (shared with web); defaults windowMinutes 15, role 'organizer', scenario 'normal', minute 30. */
 export const briefingRequestSchema = z
   .object({
     venueId: venueIdSchema,
@@ -145,6 +156,7 @@ export const briefingRequestSchema = z
   })
   .strict();
 
+/** User bootstrap/restore contract (shared with web); defaults claimedPoints to 0 (API clamps it anti-minting). */
 export const bootstrapSchema = z
   .object({
     displayName: displayText(DISPLAY_NAME_MAX_CHARS),
@@ -155,6 +167,7 @@ export const bootstrapSchema = z
   })
   .strict();
 
+/** Mission claim contract (shared with web); minute is required (no default), commute/heat fields optional. */
 export const missionClaimSchema = z
   .object({
     userId: z.string().trim().min(1).max(60).regex(NO_MARKUP),
@@ -167,6 +180,7 @@ export const missionClaimSchema = z
   })
   .strict();
 
+/** Leaderboard query contract (shared with web); defaults scope to 'venue', other fields optional. */
 export const leaderboardQuerySchema = z
   .object({
     scope: enumFromConst(LEADERBOARD_SCOPES).default('venue'),
@@ -177,16 +191,27 @@ export const leaderboardQuerySchema = z
   .strict();
 
 /** Inferred types — the single type source consumed by api and web. */
+/** Inferred crowd query type (from crowdQuerySchema). */
 export type CrowdQuery = z.infer<typeof crowdQuerySchema>;
+/** Inferred routing request type (from routingRequestSchema). */
 export type RoutingRequest = z.infer<typeof routingRequestSchema>;
+/** Inferred egress request type (from egressRequestSchema). */
 export type EgressRequest = z.infer<typeof egressRequestSchema>;
+/** Inferred weather query type (from weatherQuerySchema). */
 export type WeatherQuery = z.infer<typeof weatherQuerySchema>;
+/** Inferred incident report type (from incidentReportSchema). */
 export type IncidentReport = z.infer<typeof incidentReportSchema>;
+/** Inferred entry-facts input type (from entryFactsSchema). */
 export type EntryFactsInput = z.infer<typeof entryFactsSchema>;
+/** Inferred assistant query type (from assistantQuerySchema). */
 export type AssistantQuery = z.infer<typeof assistantQuerySchema>;
+/** Inferred briefing request type (from briefingRequestSchema). */
 export type BriefingRequest = z.infer<typeof briefingRequestSchema>;
+/** Inferred bootstrap request type (from bootstrapSchema). */
 export type BootstrapRequest = z.infer<typeof bootstrapSchema>;
+/** Inferred mission claim input type (from missionClaimSchema). */
 export type MissionClaimInput = z.infer<typeof missionClaimSchema>;
+/** Inferred leaderboard query type (from leaderboardQuerySchema). */
 export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
 
 /** Every exported request schema, for the "all strict + all safe" invariant tests. */

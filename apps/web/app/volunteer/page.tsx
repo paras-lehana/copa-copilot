@@ -9,7 +9,7 @@ import { crowdResponseSchema, incidentCreatedSchema, incidentsResponseSchema } f
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { Button, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { Button, Muted, Panel, RetryCard, Skeleton, Stack, StatusPill } from '../../components/ui';
 import { VOLUNTEER_VIEW } from '../../lib/scenarios';
 import { incidentReportSchema } from '@copa/core';
 
@@ -52,42 +52,35 @@ export default function VolunteerPage() {
   const congested = crowd.data?.snapshot.zones.filter((z) => z.status !== 'comfortable') ?? [];
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>Volunteer — zone {session.sectionZoneId}</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>Live context and a fast way to report and redirect.</p>
+    <Stack>
+      <div>
+        <h1 className="mb-1">Volunteer — zone {session.sectionZoneId}</h1>
+        <Muted className="mt-0">Live context and a fast way to report and redirect.</Muted>
+      </div>
 
-      <section aria-labelledby="zone-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="zone-h" style={{ marginTop: 0 }}>
-          Congested zones near you
-        </h2>
+      <Panel id="zone-h" title="Congested zones near you" icon="👥">
         {crowd.loading && <Skeleton height={60} />}
         {crowd.error !== undefined && <RetryCard message={crowd.error} onRetry={crowd.reload} />}
         {crowd.data !== undefined && congested.length === 0 && <p>All calm right now.</p>}
-        <ul role="list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+        <ul role="list" className="list-none p-0 m-0 grid gap-1.5">
           {congested.slice(0, 6).map((z) => (
-            <li key={z.zoneId} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <li key={z.zoneId} className="flex items-center gap-2">
               <StatusPill status={z.status} /> {z.name} — {z.densityPct}%
             </li>
           ))}
         </ul>
-      </section>
+      </Panel>
 
-      <section aria-labelledby="script-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="script-h" style={{ marginTop: 0 }}>
-          Redirect scripts
-        </h2>
-        <ul role="list" style={{ paddingInlineStart: 20 }}>
+      <Panel id="script-h" title="Redirect scripts" icon="🗣️">
+        <ul role="list" className="ps-5 list-disc">
           <li>&ldquo;Gate A is very busy — please follow the blue signs to Gate E, about 3 minutes.&rdquo;</li>
           <li>&ldquo;For step-free access, take the lift on your left to the concourse ring.&rdquo;</li>
           <li>&ldquo;Trains are crowded now; the 82nd-minute departure is much faster.&rdquo;</li>
         </ul>
-      </section>
+      </Panel>
 
-      <section aria-labelledby="report-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="report-h" style={{ marginTop: 0 }}>
-          Quick incident report
-        </h2>
-        <label htmlFor="report" style={{ fontSize: 13, color: 'var(--text-dim)' }}>
+      <Panel id="report-h" title="Quick incident report" icon="📝">
+        <label htmlFor="report" className="text-[13px] text-[var(--text-dim)]">
           Describe what you see (we structure it for the ops queue)
         </label>
         <textarea
@@ -97,10 +90,10 @@ export default function VolunteerPage() {
           onChange={(e) => setReport(e.target.value)}
           rows={3}
           maxLength={240}
-          style={{ width: '100%', borderRadius: 10, padding: 10, background: 'var(--bg-1)', color: 'var(--text)', border: '1px solid var(--surface-edge)', marginTop: 6 }}
+          className="w-full rounded-[10px] p-2.5 mt-1.5 bg-[var(--bg-1)] text-[var(--text)] border border-[var(--surface-edge)]"
         />
         {error !== undefined && (
-          <p role="alert" style={{ color: 'var(--danger)' }}>
+          <p role="alert" className="text-[var(--danger)]">
             {error}
           </p>
         )}
@@ -108,22 +101,19 @@ export default function VolunteerPage() {
           File report
         </Button>
         {submitted !== undefined && (
-          <p role="status" style={{ color: 'var(--ok)', fontWeight: 600 }}>
+          <p role="status" className="text-[var(--ok)] font-semibold">
             {submitted}
           </p>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="q-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="q-h" style={{ marginTop: 0 }}>
-          Current ops queue
-        </h2>
+      <Panel id="q-h" title="Current ops queue" icon="📋">
         {incidents.data?.incidents.slice(0, 4).map((inc) => (
-          <p key={inc.id} style={{ margin: '4px 0' }}>
+          <p key={inc.id} className="my-1">
             <StatusPill status={inc.severity === 'critical' || inc.severity === 'high' ? 'critical' : 'busy'} /> {inc.summary}
           </p>
         ))}
-      </section>
-    </div>
+      </Panel>
+    </Stack>
   );
 }

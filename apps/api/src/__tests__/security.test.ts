@@ -1,8 +1,14 @@
 // security.test.ts — M23/M24: rate buckets (limit/refill/prune), security headers,
-// CORS allow-list, secret-absence sweeps and log-redaction contracts.
+// CORS allow-list, secret-absence sweeps, log-redaction contracts, plus the M25
+// defence-in-depth layer: input sanitisation, SSRF allow-list, request correlation
+// ids, and the fail-closed startup self-test.
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
+import { loadConfig } from '../config';
 import { TokenBucketLimiter } from '../middleware/rate-limit';
+import { MAX_SANITIZED_LENGTH, hasSuspiciousChars, sanitizeText } from '../middleware/sanitize';
+import { isAllowedLlmUrl } from '../services/llm-client';
+import { hasCriticalFinding, runSecuritySelfTest } from '../services/security-selftest';
 import { frozenClock, testApp } from './helpers';
 
 describe('token buckets (M23)', () => {
@@ -148,5 +154,148 @@ describe('log redaction contract', () => {
     await request(app).get('/api/nope');
     const line = logs.find((l) => l.message.includes('/api/nope'));
     expect(line?.severity).toBe('INFO'); // 404 is INFO; only 5xx escalates
+  });
+});
+
+describe('input sanitisation (M25)', () => {
+  // Built via escapes so the source stays pure ASCII and unambiguous.
+  const NUL = String.fromCharCode(0); // C0 control
+  const ZWSP = String.fromCharCode(0x200b); // zero-width space
+  const ZWJ = String.fromCharCode(0x200d); // zero-width joiner
+  const RLO = String.fromCharCode(0x202e); // right-to-left override
+  const BOM = String.fromCharCode(0xfeff); // byte-order mark
+
+  it('strips C0/C1 control characters', () => {
+    expect(sanitizeText(`a${NUL}bcd`)).toBe('abcd');
+  });
+
+  it('strips zero-width and bidi-override steganography', () => {
+    expect(sanitizeText(`hi${ZWSP}there${ZWJ}${RLO}world${BOM}`)).toBe('hithereworld');
+  });
+
+  it('collapses whitespace runs and trims', () => {
+    expect(sanitizeText('  a   b\t\tc  ')).toBe('a b c');
+  });
+
+  it('caps length at the documented maximum', () => {
+    expect(sanitizeText('x'.repeat(5000)).length).toBe(MAX_SANITIZED_LENGTH);
+    expect(sanitizeText('x'.repeat(50), 10)).toHaveLength(10);
+  });
+
+  it('leaves legitimate multilingual text untouched', () => {
+    expect(sanitizeText('Donde esta mi asiento?')).toBe('Donde esta mi asiento?');
+    const arabic = String.fromCharCode(0x635, 0x631, 0x627, 0x637);
+    expect(sanitizeText(arabic)).toBe(arabic);
+  });
+
+  it('flags suspicious characters without mutating', () => {
+    expect(hasSuspiciousChars('normal seat question')).toBe(false);
+    expect(hasSuspiciousChars(`inject${RLO}payload`)).toBe(true);
+    expect(hasSuspiciousChars(`bell${NUL}`)).toBe(true);
+  });
+
+  it('a bidi-hidden instruction cannot survive into the assistant reply', async () => {
+    const { app } = testApp();
+    const res = await request(app)
+      .post('/api/assistant/query')
+      .send({ message: `${RLO}what is the crowd${ZWSP} like? `, venueId: 'metlife' });
+    expect(res.status).toBe(200);
+    expect(res.body.reply.text).not.toContain(RLO);
+    expect(res.body.reply.text).not.toContain(ZWSP);
+  });
+});
+
+describe('SSRF allow-list on the key-bearing upstream (M25)', () => {
+  it('accepts allow-listed HTTPS hosts and localhost', () => {
+    expect(isAllowedLlmUrl('https://llm.lehana.in')).toBe(true);
+    expect(isAllowedLlmUrl('http://localhost:8080')).toBe(true);
+    expect(isAllowedLlmUrl('http://127.0.0.1:9000')).toBe(true);
+  });
+
+  it('rejects internal metadata, plaintext, and non-allow-listed hosts', () => {
+    expect(isAllowedLlmUrl('http://169.254.169.254/latest/meta-data')).toBe(false); // cloud metadata
+    expect(isAllowedLlmUrl('http://llm.lehana.in')).toBe(false); // plaintext to a real host
+    expect(isAllowedLlmUrl('https://evil.example')).toBe(false);
+    expect(isAllowedLlmUrl('file:///etc/passwd')).toBe(false);
+    expect(isAllowedLlmUrl('not-a-url')).toBe(false);
+  });
+});
+
+describe('request correlation ids (M25)', () => {
+  it('assigns an X-Request-Id when the client sends none', async () => {
+    const { app } = testApp();
+    const res = await request(app).get('/api/health');
+    expect(res.headers['x-request-id']).toMatch(/^req-[a-z0-9]+-[a-z0-9]+$/);
+  });
+
+  it('honours a safe inbound id and echoes it back', async () => {
+    const { app } = testApp();
+    const res = await request(app).get('/api/health').set('x-request-id', 'trace-ABC-123');
+    expect(res.headers['x-request-id']).toBe('trace-ABC-123');
+  });
+
+  it('rejects an unsafe inbound id and mints its own', async () => {
+    const { app } = testApp();
+    const res = await request(app).get('/api/health').set('x-request-id', 'bad id with spaces & <html>');
+    expect(res.headers['x-request-id']).not.toBe('bad id with spaces & <html>');
+    expect(res.headers['x-request-id']).toMatch(/^req-/);
+  });
+});
+
+describe('startup security self-test (M25)', () => {
+  const prodEnv = {
+    NODE_ENV: 'production',
+    DEMO_MODE: 'false',
+    LLM_INTERNAL_KEY: 'FAKE-TEST-LLM-KEY-not-a-real-secret',
+    ALLOWED_ORIGINS: 'https://copa.example',
+    SIM_SEED: '26',
+  };
+
+  it('a well-formed production config yields no findings', () => {
+    const config = loadConfig(prodEnv);
+    const findings = runSecuritySelfTest(config, { isProduction: true });
+    expect(findings).toHaveLength(0);
+    expect(hasCriticalFinding(findings)).toBe(false);
+  });
+
+  it('flags a wildcard CORS origin as critical (second line of defence)', () => {
+    // The config's zod layer already rejects '*' at parse time — this proves the
+    // self-test would ALSO catch it if a future refactor loosened that first gate.
+    const config = { ...loadConfig(prodEnv), allowedOrigins: ['*'] };
+    const findings = runSecuritySelfTest(config, { isProduction: true });
+    expect(findings.some((f) => f.id === 'cors-wildcard' && f.severity === 'critical')).toBe(true);
+    expect(hasCriticalFinding(findings)).toBe(true);
+  });
+
+  it('flags a plaintext production origin as critical', () => {
+    const config = loadConfig({ ...prodEnv, ALLOWED_ORIGINS: 'http://copa.example' });
+    const findings = runSecuritySelfTest(config, { isProduction: true });
+    expect(findings.some((f) => f.id === 'cors-insecure' && f.severity === 'critical')).toBe(true);
+  });
+
+  it('flags a non-allow-listed plaintext upstream as critical', () => {
+    const config = loadConfig({ ...prodEnv, LLM_SERVICE_URL: 'http://169.254.169.254' });
+    const findings = runSecuritySelfTest(config, { isProduction: true });
+    expect(findings.some((f) => f.id === 'llm-upstream-unsafe' && f.severity === 'critical')).toBe(true);
+  });
+
+  it('warns (does not block) when live mode has no key', () => {
+    const config = loadConfig({ ...prodEnv, LLM_INTERNAL_KEY: '' });
+    const findings = runSecuritySelfTest(config, { isProduction: true });
+    expect(findings.some((f) => f.id === 'live-without-key' && f.severity === 'warning')).toBe(true);
+    expect(hasCriticalFinding(findings)).toBe(false);
+  });
+
+  it('sorts critical findings ahead of warnings', () => {
+    const config = { ...loadConfig({ ...prodEnv, LLM_INTERNAL_KEY: '' }), allowedOrigins: ['*'] };
+    const findings = runSecuritySelfTest(config, { isProduction: true });
+    expect(findings[0]?.severity).toBe('critical');
+    expect(findings[findings.length - 1]?.severity).toBe('warning');
+  });
+
+  it('a local dev config (localhost origin, demo mode) is clean', () => {
+    const config = loadConfig({ DEMO_MODE: 'true', ALLOWED_ORIGINS: 'http://localhost:3000', SIM_SEED: '26' });
+    const findings = runSecuritySelfTest(config, { isProduction: false });
+    expect(findings).toHaveLength(0);
   });
 });

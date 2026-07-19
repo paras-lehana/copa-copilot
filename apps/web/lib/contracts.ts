@@ -258,8 +258,21 @@ export const googleServicesResponseSchema = z.object({
   runtime: z.object({ geminiKeyPresent: z.boolean(), region: z.string() }),
 });
 
+// Inferred response types — the single type source for the web. Pages consume THESE
+// instead of hand-mirroring the shapes (hand-mirroring silently widens the enum
+// fields — engine, zoneStatus, risk — back to bare `string`).
 export type CrowdResponse = z.infer<typeof crowdResponseSchema>;
 export type RouteResponse = z.infer<typeof routeResponseSchema>;
+export type EgressResponse = z.infer<typeof egressResponseSchema>;
 export type WeatherResponse = z.infer<typeof weatherResponseSchema>;
+export type EntryResponse = z.infer<typeof entryResponseSchema>;
 export type AssistantResponse = z.infer<typeof assistantResponseSchema>;
+export type BriefingResponse = z.infer<typeof briefingResponseSchema>;
+export type IncidentsResponse = z.infer<typeof incidentsResponseSchema>;
+export type MissionsResponse = z.infer<typeof missionsResponseSchema>;
+export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
+export type VenuesResponse = z.infer<typeof venuesResponseSchema>;
+export type GoogleServicesResponse = z.infer<typeof googleServicesResponseSchema>;
+/** A single crowd zone row (used by dashboard/ops tiles). */
+export type ZoneCrowd = z.infer<typeof zoneCrowdSchema>;
 export type Profile = z.infer<typeof profileSchema>['profile'];

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { leaderboardResponseSchema } from '../../lib/contracts';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { RetryCard, Skeleton } from '../../components/ui';
+import { Panel, RetryCard, Skeleton, Stack } from '../../components/ui';
 
 type Scope = 'section' | 'venue' | 'tournament';
 const SCOPES: readonly Scope[] = ['section', 'venue', 'tournament'];
@@ -20,56 +20,45 @@ export default function LeaderboardPage() {
   const board = useApi(`/api/leaderboard?${query.toString()}`, leaderboardResponseSchema, [scope, session.venueId]);
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>Leaderboards</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+    <Stack>
+      <h1 className="mb-0">Leaderboards</h1>
+      <p className="text-[var(--text-dim)] mt-0">
         Fans and stands ranked by operational impact and sustainability.
       </p>
 
-      <div role="tablist" aria-label="Leaderboard scope" style={{ display: 'flex', gap: 8 }}>
+      <div role="tablist" aria-label="Leaderboard scope" className="flex gap-2">
         {SCOPES.map((s) => (
           <button
             key={s}
             role="tab"
             aria-selected={scope === s}
             onClick={() => setScope(s)}
-            style={{
-              minHeight: 44,
-              padding: '8px 16px',
-              borderRadius: 999,
-              cursor: 'pointer',
-              fontWeight: 600,
-              textTransform: 'capitalize',
-              background: scope === s ? 'var(--primary)' : 'transparent',
-              color: scope === s ? 'var(--on-primary)' : 'var(--text)',
-              border: '1px solid var(--surface-edge)',
-            }}
+            className={`min-h-[44px] px-4 py-2 rounded-full cursor-pointer font-semibold capitalize border border-[var(--surface-edge)] ${
+              scope === s ? 'bg-[var(--primary)] text-[var(--on-primary)]' : 'bg-transparent text-[var(--text)]'
+            }`}
           >
             {s}
           </button>
         ))}
       </div>
 
-      <section aria-labelledby="board-h" className="glass" style={{ padding: 20 }}>
-        <h2 id="board-h" style={{ marginTop: 0 }}>
-          Top fans — {scope}
-        </h2>
+      <Panel id="board-h" title={`Top fans — ${scope}`} icon="🏆">
         {board.loading && <Skeleton height={120} />}
         {board.error !== undefined && <RetryCard message={board.error} onRetry={board.reload} />}
         {board.data !== undefined && board.data.page.top.length === 0 && (
           <p>No entries yet — complete a mission to appear here.</p>
         )}
         {board.data !== undefined && board.data.page.top.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <caption style={{ textAlign: 'start', color: 'var(--text-dim)', marginBottom: 8 }}>
+          <table className="w-full border-collapse">
+            <caption className="text-start text-[var(--text-dim)] mb-2">
               {board.data.page.totalEntries} fans ranked
             </caption>
             <thead>
               <tr>
-                <th scope="col" style={{ textAlign: 'start' }}>Rank</th>
-                <th scope="col" style={{ textAlign: 'start' }}>Fan</th>
-                <th scope="col" style={{ textAlign: 'end' }}>Points</th>
-                <th scope="col" style={{ textAlign: 'end' }}>kg CO₂e</th>
+                <th scope="col" className="text-start">Rank</th>
+                <th scope="col" className="text-start">Fan</th>
+                <th scope="col" className="text-end">Points</th>
+                <th scope="col" className="text-end">kg CO₂e</th>
               </tr>
             </thead>
             <tbody>
@@ -77,29 +66,26 @@ export default function LeaderboardPage() {
                 <tr key={row.userId}>
                   <td>{row.rank}</td>
                   <td>{row.displayName}</td>
-                  <td style={{ textAlign: 'end' }}>{row.points}</td>
-                  <td style={{ textAlign: 'end' }}>{row.kgCo2eSaved}</td>
+                  <td className="text-end">{row.points}</td>
+                  <td className="text-end">{row.kgCo2eSaved}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </section>
+      </Panel>
 
       {board.data !== undefined && board.data.greenestSections.length > 0 && (
-        <section aria-labelledby="green-h" className="glass" style={{ padding: 20 }}>
-          <h2 id="green-h" style={{ marginTop: 0 }}>
-            Greenest sections
-          </h2>
-          <ul role="list" style={{ paddingInlineStart: 20 }}>
+        <Panel id="green-h" title="Greenest sections" icon="🌱">
+          <ul role="list" className="ps-5">
             {board.data.greenestSections.map((s) => (
               <li key={s.sectionZoneId}>
                 {s.sectionZoneId}: {s.totalKgCo2eSaved} kg CO₂e saved
               </li>
             ))}
           </ul>
-        </section>
+        </Panel>
       )}
-    </div>
+    </Stack>
   );
 }

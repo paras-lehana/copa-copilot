@@ -68,14 +68,8 @@ export default function DashboardPage() {
       {/* Header + live banner */}
       <motion.div {...fade(0)}>
         <div className="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-1">
-          <span
-            className="w-2 h-2 rounded-full animate-pulse"
-            style={{ background: 'var(--danger)' }}
-            aria-hidden="true"
-          />
-          <span className="font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>
-            Live
-          </span>
+          <span className="w-2 h-2 rounded-full animate-pulse bg-[var(--danger)]" aria-hidden="true" />
+          <span className="font-bold uppercase tracking-wider text-[var(--danger)]">Live</span>
           <span>· {session.venueId} · match minute {minute}&apos;</span>
         </div>
         <h1 className="m-0 text-3xl font-black">

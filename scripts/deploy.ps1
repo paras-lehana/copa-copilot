@@ -34,12 +34,19 @@ if (Test-Path $envFile) {
   $llmKey = (Select-String -Path $envFile -Pattern '^LLM_INTERNAL_KEY=(.+)$').Matches | ForEach-Object { $_.Groups[1].Value.Trim() } | Select-Object -First 1
   if ($llmKey) {
     Write-Host '==> Storing llm-service key in Secret Manager (live mode)'
+    # Write the key to a temp file with NO trailing newline. Piping ($key | gcloud)
+    # appends a CRLF, which lands in the mounted secret and corrupts the outgoing
+    # X-Internal-Key header (an illegal header value) — the upstream then 401s and the
+    # API silently degrades to demo mode. A byte-exact file is the reliable fix.
+    $keyFile = Join-Path ([System.IO.Path]::GetTempPath()) 'copa-llm-key.tmp'
+    [System.IO.File]::WriteAllText($keyFile, $llmKey, (New-Object System.Text.UTF8Encoding($false)))
     $secretExists = gcloud secrets describe llm-internal-key --format='value(name)' 2>$null
     if ($secretExists) {
-      $llmKey | gcloud secrets versions add llm-internal-key --data-file=-
+      gcloud secrets versions add llm-internal-key --data-file=$keyFile
     } else {
-      $llmKey | gcloud secrets create llm-internal-key --data-file=-
+      gcloud secrets create llm-internal-key --data-file=$keyFile
     }
+    Remove-Item $keyFile -Force -ErrorAction SilentlyContinue
     $projectNumber = gcloud projects describe $ProjectId --format='value(projectNumber)'
     gcloud secrets add-iam-policy-binding llm-internal-key `
       --member="serviceAccount:$projectNumber-compute@developer.gserviceaccount.com" `
@@ -59,7 +66,7 @@ gcloud builds submit --config cloudbuild-web.yaml "--substitutions=_REGION=$Regi
 
 Write-Host '==> Allowing the web origin through API CORS'
 $webUrl = gcloud run services describe copa-copilot-web --region=$Region --format='value(status.url)'
-gcloud run services update copa-copilot-api --region=$Region "--update-env-vars=^:^ALLOWED_ORIGINS=$webUrl,http://localhost:3100"
+gcloud run services update copa-copilot-api --region=$Region "--update-env-vars=^@^ALLOWED_ORIGINS=$webUrl,http://localhost:3100"
 
 Write-Host ''
 Write-Host '================ DEPLOYED ================'

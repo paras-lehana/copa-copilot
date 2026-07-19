@@ -4,6 +4,7 @@ import './globals.css';
 import { SessionProvider } from '../lib/session';
 import { Chrome } from '../components/Chrome';
 import { THEME_BOOTSTRAP_SCRIPT } from '../lib/theme';
+import { A11Y_BOOTSTRAP_SCRIPT } from '../lib/a11y-prefs';
 
 export const metadata: Metadata = {
   title: 'Copa Copilot — Smart Stadium Copilot for FIFA World Cup 2026',
@@ -15,8 +16,10 @@ export default function RootLayout({ children }: { children: ReactNode }): React
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Set the theme before paint to avoid a flash. Static string, no user input. */}
+        {/* Set the theme + accessibility preferences before paint to avoid a flash.
+            Both are static strings with no user input. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: A11Y_BOOTSTRAP_SCRIPT }} />
       </head>
       <body>
         <SessionProvider>

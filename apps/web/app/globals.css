@@ -87,8 +87,7 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-/* Glassmorphism — the signature card. `.glass` is an alias used by some pages. */
-.glass,
+/* Glassmorphism — the signature card. One canonical class: `.glass-card`. */
 .glass-card {
   background: var(--surface);
   backdrop-filter: blur(16px) saturate(180%);
@@ -184,4 +183,57 @@ h1, h2, h3, h4, h5, h6 {
 .ai-response strong {
   font-weight: 700;
   color: var(--text);
+}
+
+/* ── In-app accessibility preferences (see lib/a11y-prefs.ts) ──
+   These `data-*` attributes are stamped on <html> by the pre-paint bootstrap script
+   and by the Accessibility settings panel. They let a user override presentation
+   even when they cannot change their OS settings (WCAG 1.4.4, 1.4.8, 1.4.12, 2.3.3). */
+
+/* Text size (WCAG 1.4.4 Resize Text): scale the root; rem-based type scales with it. */
+:root[data-text='large'] {
+  font-size: 112.5%;
+}
+:root[data-text='xlarge'] {
+  font-size: 125%;
+}
+
+/* High contrast (WCAG 1.4.8): firmer edges and a stronger text/background separation. */
+:root[data-contrast='high'] {
+  --surface-edge: rgba(15, 23, 42, 0.55);
+  --text-dim: #33415a;
+}
+:root[data-contrast='high'][data-theme='dark'],
+:root[data-contrast='high']:not([data-theme='light']) {
+  --surface-edge: rgba(255, 255, 255, 0.55);
+  --text-dim: #e4ecf7;
+}
+:root[data-contrast='high'] .glass-card {
+  border-width: 2px;
+  box-shadow: none;
+}
+:root[data-contrast='high'] .glass-card,
+:root[data-contrast='high'] body {
+  background: var(--bg-1);
+}
+
+/* Dyslexia-friendly reading (WCAG 1.4.8, 1.4.12): a rounder face + generous spacing.
+   No web font is fetched (self-contained); we use widely-available system faces plus
+   the spacing improvements that carry most of the readability benefit. */
+:root[data-font='dyslexic'] body {
+  font-family: 'Comic Sans MS', 'Trebuchet MS', Verdana, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  word-spacing: 0.12em;
+  line-height: 1.7;
+}
+
+/* Reduce motion (WCAG 2.3.3) for users who cannot set the OS flag — mirrors the
+   media query above so the in-app toggle is just as effective. */
+:root[data-motion='reduce'] *,
+:root[data-motion='reduce'] *::before,
+:root[data-motion='reduce'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }

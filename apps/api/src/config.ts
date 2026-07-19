@@ -13,8 +13,9 @@ const configSchema = z.object({
   llmServiceUrl: z.string().default('https://llm.lehana.in'),
   llmEndpoint: z.string().default('antigravity-manager'),
   llmModel: z.string().default('gemini-3-flash'),
-  /** Service-to-service key sent as X-Internal-Key; empty ⇒ demo path. */
-  llmInternalKey: z.string().default(''),
+  /** Service-to-service key sent as X-Internal-Key; empty ⇒ demo path. Trimmed so a
+   *  stray newline from a mis-stored secret can't corrupt the outgoing header. */
+  llmInternalKey: z.string().trim().default(''),
   allowedOrigins: z.array(z.string().url().or(z.string().startsWith('http://localhost'))),
   simSeed: z.coerce.number().int().default(26),
 });
@@ -23,6 +24,8 @@ const configSchema = z.object({
 export interface AppConfig extends z.infer<typeof configSchema> {
   /** Returns "now" — injectable so API tests can freeze the clock. */
   readonly now: () => Date;
+  /** True on Cloud Run / NODE_ENV=production — drives fail-closed security checks. */
+  readonly isProduction: boolean;
 }
 
 /**
@@ -48,7 +51,7 @@ export function loadConfig(
       .filter((o) => o.length > 0),
     simSeed: env.SIM_SEED,
   });
-  return { ...parsed, now };
+  return { ...parsed, now, isProduction };
 }
 
 /** True when an llm-service key is present — the live-assistant readiness signal. */

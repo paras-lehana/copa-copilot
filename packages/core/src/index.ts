@@ -18,3 +18,4 @@ export * from './gamification';
 export * from './leaderboard';
 export * from './schemas';
 export * from './google/service-catalog';
+export * from './a11y/wcag-catalog';

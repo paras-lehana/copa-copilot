@@ -12,6 +12,7 @@ import {
   type LiteracyTier,
   type Result,
   adviseEgress,
+  appError,
   assessEntryReadiness,
   buildStadiumGraph,
   err,
@@ -23,6 +24,7 @@ import {
   sustainabilityTiles,
 } from '@copa/core';
 import { type AppConfig, hasLlmKey } from '../config';
+import { sanitizeText } from '../middleware/sanitize';
 import { llmComplete } from './llm-client';
 import { REFUSAL_RULES, boundEngineData, boundUserInput, makeNonce } from './prompt-boundary';
 
@@ -91,83 +93,101 @@ export function routeIntent(message: string): ToolId {
   return 'getCrowdStatus'; // safest default: describe conditions around the fan
 }
 
-/** Execute one tool against the engines. Every trace carries the raw data. */
+/** A tool handler maps the request context to a grounded trace or a typed error. */
+type ToolHandler = (ctx: ToolContext) => Result<ToolTrace, AppError>;
+
+function handleCrowdStatus(ctx: ToolContext): Result<ToolTrace, AppError> {
+  const snap = simulateVenue(ctx.venueId, ctx.scenario, ctx.minute, ctx.seed);
+  if (snap === undefined) return err(appError('NOT_FOUND', `unknown venue "${ctx.venueId}"`));
+  const busiest = [...snap.zones].sort((a, b) => b.densityPct - a.densityPct)[0];
+  return ok({
+    tool: 'getCrowdStatus',
+    summary: `Busiest zone: ${busiest?.name ?? 'n/a'} at ${busiest?.densityPct ?? 0}% (${busiest?.status ?? 'n/a'}).`,
+    // `busiest` is exposed alongside the sampled zones so the summary's numbers are
+    // always present in the grounded data (checked by the AI eval harness).
+    data: { phase: snap.phase, busiest, zones: snap.zones.slice(0, 8), transit: snap.transit },
+  });
+}
+
+function handleSafeRoute(ctx: ToolContext): Result<ToolTrace, AppError> {
+  const profile = /wheelchair|silla|fauteuil/i.test(ctx.message)
+    ? 'wheelchair'
+    : /quiet|sensory|calm/i.test(ctx.message)
+      ? 'sensory-sensitive'
+      : 'none';
+  const graph = buildStadiumGraph(ctx.venueId);
+  const from = graph?.zones.find((z) => z.kind === 'gate')?.id ?? 'gate-a';
+  const to = graph?.zones.find((z) => z.kind === 'section')?.id ?? 'sec-111';
+  const route = recommendRoute(ctx.venueId, from, to, profile, ctx.scenario, ctx.minute, ctx.seed);
+  if (!route.ok) return route;
+  return ok({ tool: 'findSafeRoute', summary: route.value.explanation, data: route.value });
+}
+
+function handleExitAdvice(ctx: ToolContext): Result<ToolTrace, AppError> {
+  const advice = adviseEgress(ctx.venueId, 'rail', ctx.scenario, ctx.seed);
+  // Rail-less venues (e.g. Arrowhead) fall back to the bus link.
+  const chosen = advice.ok ? advice : adviseEgress(ctx.venueId, 'bus', ctx.scenario, ctx.seed);
+  if (!chosen.ok) return chosen;
+  return ok({ tool: 'getExitAdvice', summary: chosen.value.explanation, data: chosen.value });
+}
+
+function handleWeatherProtocol(ctx: ToolContext): Result<ToolTrace, AppError> {
+  const protocol = evaluateWeatherProtocol(ctx.venueId, 'heat-dome', ctx.minute, ctx.seed);
+  if (protocol === undefined) return err(appError('NOT_FOUND', `unknown venue "${ctx.venueId}"`));
+  return ok({
+    tool: 'getWeatherProtocol',
+    summary: `Protocol ${protocol.state}, heat tier ${protocol.heatTier} (heat index ${protocol.reading.heatIndexF}°F).`,
+    data: protocol,
+  });
+}
+
+function handleEntryChecklist(ctx: ToolContext): Result<ToolTrace, AppError> {
+  const readiness = assessEntryReadiness(
+    ctx.venueId,
+    {
+      ticketSource: /resale|third|stubhub|seatgeek/i.test(ctx.message) ? 'third-party' : 'official',
+      transferConfirmed: !/not (yet )?transferred|didn'?t (get|receive)/i.test(ctx.message),
+      idPacked: true,
+      bagCompliant: true,
+    },
+    ctx.seed,
+  );
+  if (readiness === undefined) return err(appError('NOT_FOUND', `unknown venue "${ctx.venueId}"`));
+  return ok({
+    tool: 'getEntryChecklist',
+    summary: `Entry risk ${readiness.riskLevel}; readiness ${readiness.readinessScore}%. Arrive between ${-readiness.arrivalWindow.toMinute} and ${-readiness.arrivalWindow.fromMinute} minutes before kickoff.`,
+    data: readiness,
+  });
+}
+
+function handleSustainability(ctx: ToolContext): Result<ToolTrace, AppError> {
+  const tiles = sustainabilityTiles(ctx.venueId, ctx.minute, ctx.seed);
+  if (tiles === undefined) return err(appError('NOT_FOUND', `unknown venue "${ctx.venueId}"`));
+  return ok({
+    tool: 'getSustainability',
+    summary: `Waste diverted ${tiles.wasteDivertedPct}%; ${tiles.waterRefills} refills; ${tiles.kgCo2eSavedByTransit} kg CO2e saved by transit riders.`,
+    data: tiles,
+  });
+}
+
+function handleRefuse(): Result<ToolTrace, AppError> {
+  return ok({ tool: 'refuse', summary: 'Request declined by the safety rules.', data: { rules: REFUSAL_RULES } });
+}
+
+/** Data-driven tool dispatch — one named handler per verb, no branching in the caller. */
+const TOOL_HANDLERS: Record<ToolId, ToolHandler> = {
+  getCrowdStatus: handleCrowdStatus,
+  findSafeRoute: handleSafeRoute,
+  getExitAdvice: handleExitAdvice,
+  getWeatherProtocol: handleWeatherProtocol,
+  getEntryChecklist: handleEntryChecklist,
+  getSustainability: handleSustainability,
+  refuse: handleRefuse,
+};
+
+/** Execute one tool against the engines. Every trace carries the raw grounded data. */
 export function executeTool(tool: ToolId, ctx: ToolContext): Result<ToolTrace, AppError> {
-  switch (tool) {
-    case 'getCrowdStatus': {
-      const snap = simulateVenue(ctx.venueId, ctx.scenario, ctx.minute, ctx.seed);
-      if (snap === undefined) return err({ code: 'NOT_FOUND' });
-      const busiest = [...snap.zones].sort((a, b) => b.densityPct - a.densityPct)[0];
-      return ok({
-        tool,
-        summary: `Busiest zone: ${busiest?.name ?? 'n/a'} at ${busiest?.densityPct ?? 0}% (${busiest?.status ?? 'n/a'}).`,
-        // `busiest` is exposed alongside the sampled zones so the summary's numbers
-        // are always present in the grounded data (checked by the AI eval harness).
-        data: { phase: snap.phase, busiest, zones: snap.zones.slice(0, 8), transit: snap.transit },
-      });
-    }
-    case 'findSafeRoute': {
-      const profile = /wheelchair|silla|fauteuil/i.test(ctx.message)
-        ? 'wheelchair'
-        : /quiet|sensory|calm/i.test(ctx.message)
-          ? 'sensory-sensitive'
-          : 'none';
-      const graph = buildStadiumGraph(ctx.venueId);
-      const from = graph?.zones.find((z) => z.kind === 'gate')?.id ?? 'gate-a';
-      const to = graph?.zones.find((z) => z.kind === 'section')?.id ?? 'sec-111';
-      const route = recommendRoute(ctx.venueId, from, to, profile, ctx.scenario, ctx.minute, ctx.seed);
-      if (!route.ok) return route;
-      return ok({ tool, summary: route.value.explanation, data: route.value });
-    }
-    case 'getExitAdvice': {
-      const advice = adviseEgress(ctx.venueId, 'rail', ctx.scenario, ctx.seed);
-      const fallback = advice.ok ? advice : adviseEgress(ctx.venueId, 'bus', ctx.scenario, ctx.seed);
-      if (!fallback.ok) return fallback;
-      return ok({ tool, summary: fallback.value.explanation, data: fallback.value });
-    }
-    case 'getWeatherProtocol': {
-      const protocol = evaluateWeatherProtocol(ctx.venueId, 'heat-dome', ctx.minute, ctx.seed);
-      if (protocol === undefined) return err({ code: 'NOT_FOUND' });
-      return ok({
-        tool,
-        summary: `Protocol ${protocol.state}, heat tier ${protocol.heatTier} (heat index ${protocol.reading.heatIndexF}°F).`,
-        data: protocol,
-      });
-    }
-    case 'getEntryChecklist': {
-      const readiness = assessEntryReadiness(
-        ctx.venueId,
-        {
-          ticketSource: /resale|third|stubhub|seatgeek/i.test(ctx.message) ? 'third-party' : 'official',
-          transferConfirmed: !/not (yet )?transferred|didn'?t (get|receive)/i.test(ctx.message),
-          idPacked: true,
-          bagCompliant: true,
-        },
-        ctx.seed,
-      );
-      if (readiness === undefined) return err({ code: 'NOT_FOUND' });
-      return ok({
-        tool,
-        summary: `Entry risk ${readiness.riskLevel}; readiness ${readiness.readinessScore}%. Arrive between ${-readiness.arrivalWindow.toMinute} and ${-readiness.arrivalWindow.fromMinute} minutes before kickoff.`,
-        data: readiness,
-      });
-    }
-    case 'getSustainability': {
-      const tiles = sustainabilityTiles(ctx.venueId, ctx.minute, ctx.seed);
-      if (tiles === undefined) return err({ code: 'NOT_FOUND' });
-      return ok({
-        tool,
-        summary: `Waste diverted ${tiles.wasteDivertedPct}%; ${tiles.waterRefills} refills; ${tiles.kgCo2eSavedByTransit} kg CO2e saved by transit riders.`,
-        data: tiles,
-      });
-    }
-    case 'refuse':
-      return ok({
-        tool,
-        summary: 'Request declined by the safety rules.',
-        data: { rules: REFUSAL_RULES },
-      });
-  }
+  return TOOL_HANDLERS[tool](ctx);
 }
 
 /** Persona voice openers — the same engine data, framed per audience. */
@@ -213,14 +233,18 @@ export async function answerQuery(
   config: AppConfig,
 ): Promise<AssistantReply> {
   const language = resolveLanguage(query.language);
-  const tool = routeIntent(query.message);
+  // Defence-in-depth: zod bounded the length, but free text can still carry control
+  // or bidi/zero-width characters that survive a type check. Strip them ONCE here so
+  // neither the intent router nor the grounded prompt ever sees steganographic input.
+  const message = sanitizeText(query.message);
+  const tool = routeIntent(message);
   const ctx: ToolContext = {
     venueId: query.venueId,
     scenario: query.scenario,
     minute: query.minute,
     seed: config.simSeed,
     persona: query.persona,
-    message: query.message,
+    message,
   };
 
   if (tool === 'refuse') {
@@ -243,7 +267,7 @@ export async function answerQuery(
   // LIVE: the model rewrites the grounded answer in the user's language and register.
   requestOrdinal += 1;
   const nonce = makeNonce(config.simSeed, requestOrdinal);
-  const bounded = boundUserInput(query.message, nonce);
+  const bounded = boundUserInput(message, nonce);
   const grounding = boundEngineData(JSON.stringify({ tool, summary: traces[0]?.summary, data: traces[0]?.data }));
   const systemPrompt = [
     `You are Copa Copilot, the stadium assistant for FIFA World Cup 2026, speaking to a ${query.persona}.`,

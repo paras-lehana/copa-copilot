@@ -6,7 +6,7 @@
 
 import { googleServicesResponseSchema } from '../../lib/contracts';
 import { useApi } from '../../lib/use-api';
-import { GlassCard, RetryCard, Skeleton, StatTile } from '../../components/ui';
+import { GlassCard, RetryCard, Skeleton, Stack, StatTile } from '../../components/ui';
 
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
   implemented: { text: 'Implemented', color: 'var(--ok)' },
@@ -18,9 +18,9 @@ export default function GoogleServicesPage() {
   const catalog = useApi('/api/google/services', googleServicesResponseSchema);
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ marginBottom: 0 }}>Google services</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+    <Stack>
+      <h1 className="mb-0">Google services</h1>
+      <p className="text-[var(--text-dim)] mt-0">
         Live from the API. One honest status vocabulary — implemented, ready-with-key, planned — the
         same in the docs, the code and this page.
       </p>
@@ -31,16 +31,16 @@ export default function GoogleServicesPage() {
       {catalog.data !== undefined && (
         <>
           <section aria-labelledby="score-h">
-            <h2 id="score-h" style={{ marginBottom: 8 }}>
+            <h2 id="score-h" className="mb-2">
               Scorecard
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px,1fr))', gap: 12 }}>
+            <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(130px,1fr))]">
               <StatTile label="Services" value={String(catalog.data.scorecard.totalServices)} />
               <StatTile label="Implemented" value={String(catalog.data.scorecard.implemented)} />
               <StatTile label="Ready with key" value={String(catalog.data.scorecard.readyWithKey)} />
               <StatTile label="Product families" value={String(catalog.data.scorecard.productFamilies)} />
             </div>
-            <p className="glass" style={{ padding: 12, marginTop: 12, fontSize: 13 }}>
+            <p className="glass-card p-3 mt-3 text-[13px]">
               🔒 This endpoint exposes env-var <strong>names only</strong> — never values or key
               material (<code>exposesSecretValues: false</code>). Gemini key present at runtime:{' '}
               <strong>{catalog.data.runtime.geminiKeyPresent ? 'yes' : 'no'}</strong>.
@@ -49,37 +49,30 @@ export default function GoogleServicesPage() {
 
           <section aria-labelledby="svc-h">
             <h2 id="svc-h">Services</h2>
-            <ul role="list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+            <ul role="list" className="list-none p-0 m-0 grid gap-3">
               {catalog.data.services.map((s) => {
                 const label = STATUS_LABEL[s.status] ?? STATUS_LABEL.planned;
                 return (
                   <li key={s.id}>
                     <GlassCard>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                        <strong style={{ fontSize: 16 }}>{s.name}</strong>
-                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{s.family}</span>
+                      <div className="flex gap-2 items-baseline flex-wrap">
+                        <strong className="text-base">{s.name}</strong>
+                        <span className="text-xs text-[var(--text-dim)]">{s.family}</span>
                         <span
-                          style={{
-                            marginInlineStart: 'auto',
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            color: 'var(--on-primary)',
-                            background: label?.color ?? 'var(--text-dim)',
-                            padding: '2px 10px',
-                            borderRadius: 999,
-                          }}
+                          className="ms-auto text-[12.5px] font-semibold text-[var(--on-primary)] py-0.5 px-2.5 rounded-full"
+                          style={{ background: label?.color ?? 'var(--text-dim)' }}
                         >
                           {label?.text}
                         </span>
                       </div>
-                      <p style={{ margin: '8px 0' }}>{s.purpose}</p>
-                      <p style={{ margin: '4px 0', fontSize: 13, color: 'var(--text-dim)' }}>
+                      <p className="my-2">{s.purpose}</p>
+                      <p className="my-1 text-[13px] text-[var(--text-dim)]">
                         <strong>Fallback:</strong> {s.fallbackMode}
                       </p>
-                      <p style={{ margin: '4px 0', fontSize: 13 }}>
+                      <p className="my-1 text-[13px]">
                         <strong>Proof:</strong> {s.proofPoints.join(' ')}
                       </p>
-                      <p style={{ margin: '4px 0', fontSize: 12, color: 'var(--text-dim)' }}>
+                      <p className="my-1 text-xs text-[var(--text-dim)]">
                         <code>{s.codePaths.join(' · ')}</code>
                       </p>
                     </GlassCard>
@@ -90,6 +83,6 @@ export default function GoogleServicesPage() {
           </section>
         </>
       )}
-    </div>
+    </Stack>
   );
 }

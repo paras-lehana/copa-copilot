@@ -75,12 +75,12 @@ function isFaithful(reply: AssistantReply): boolean {
   return replyNumbers.every((n) => grounded.has(n) || n <= 12);
 }
 
-/** Localisation: RTL languages render RTL; sentence length within the tier budget. */
-function isLocalised(reply: AssistantReply, expectedLang: string, tier: LiteracyTier): boolean {
+/** Localisation: the reply must carry a real supported language code, and every
+ *  sentence must fit the literacy tier's word budget. The requested language is
+ *  allowed to resolve to a supported base (or English fallback) — what matters is
+ *  that the resolved code is genuine, not that it echoes the request verbatim. */
+function isLocalised(reply: AssistantReply, _expectedLang: string, tier: LiteracyTier): boolean {
   if (reply.language !== languageInfo(reply.language).code) return false;
-  if (expectedLang.startsWith(reply.language) === false && reply.language !== 'en') {
-    // language resolved to a supported base; accept as long as it's a real code
-  }
   const budget = LITERACY_TIERS[tier].maxWordsPerSentence + 1; // +1 for a trailing ellipsis token
   return reply.text
     .split(/(?<=[.!?…])\s+/)
