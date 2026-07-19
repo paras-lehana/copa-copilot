@@ -152,6 +152,17 @@ copa-copilot/
 └── docs wall: EVALUATION_MAPPING · GOOGLE_SERVICES · SECURITY · TESTING · ACCESSIBILITY · ARCHITECTURE · PROMPTS · CHANGELOG
 ```
 
+## 📚 Documentation
+
+The full, section-sorted documentation set lives in **[`doc/`](doc/README.md)** — twelve
+self-contained references covering the [architecture](doc/01-architecture.md),
+[features](doc/02-features.md), [AI grounding design](doc/03-ai-assistant.md),
+[code-quality standards](doc/04-code-quality.md), [testing strategy](doc/05-testing.md),
+[security](doc/06-security.md), [accessibility](doc/07-accessibility.md),
+[Google Cloud integration](doc/08-google-cloud.md),
+[deployment & operations](doc/09-deployment.md), the [API reference](doc/10-api-reference.md),
+and the [domain model](doc/11-domain-model.md). Start at [doc/README.md](doc/README.md).
+
 ## 🔌 Google services
 
 Full contract in [GOOGLE_SERVICES.md](GOOGLE_SERVICES.md); rendered live at `/google-services` and `GET /api/google/services`. **Implemented:** Gemini API, Cloud Run, Cloud Build, Artifact Registry, Cloud Logging, Secret Manager. **Ready-with-key:** Maps JS, Routes, Cloud Translation, Cloud Text-to-Speech, Google Analytics 4. **Planned:** Firebase Auth, Firestore, BigQuery, Pub/Sub.

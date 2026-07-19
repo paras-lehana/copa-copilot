@@ -1,6 +1,6 @@
 # Testing
 
-Five layers, all runnable from a clean checkout with zero keys. The deterministic core (no `Date.now()`, no `Math.random()` — time and seed are parameters) is what makes every UI number assertable without mocking.
+Four layers, all runnable from a clean checkout with zero keys. The deterministic core (no `Date.now()`, no `Math.random()` — time and seed are parameters) is what makes every UI number assertable without mocking.
 
 ## Layers & counts
 
