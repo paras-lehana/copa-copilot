@@ -15,6 +15,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'on-first-retry',
+    // Emulate prefers-reduced-motion so entrance animations settle instantly —
+    // axe scans the final layout, and it mirrors a real reduced-motion user.
+    reducedMotion: 'reduce',
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

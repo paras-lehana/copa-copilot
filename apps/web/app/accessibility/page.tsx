@@ -8,11 +8,16 @@ import { useState } from 'react';
 import { crowdResponseSchema } from '../../lib/contracts';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { RetryCard, Skeleton } from '../../components/ui';
+import { Button, RetryCard, Skeleton } from '../../components/ui';
+import { CALM_VIEW } from '../../lib/scenarios';
 
 export default function AccessibilityPage() {
   const session = useSession();
-  const crowd = useApi(`/api/crowd/${session.venueId}?scenario=normal&minute=30`, crowdResponseSchema, [session.venueId]);
+  const crowd = useApi(
+    `/api/crowd/${session.venueId}?scenario=${CALM_VIEW.scenario}&minute=${CALM_VIEW.minute}`,
+    crowdResponseSchema,
+    [session.venueId],
+  );
   const [spoke, setSpoke] = useState<string | undefined>(undefined);
 
   const facilities =
@@ -63,12 +68,9 @@ export default function AccessibilityPage() {
         <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
           Assistant replies use short sentences (≤12 words) in audio-first mode. Try reading a line aloud:
         </p>
-        <button
-          onClick={() => speak('Gate D is calm. Take the lift to your left. Your section is three minutes away.')}
-          style={{ minHeight: 44, padding: '10px 18px', borderRadius: 10, background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: 'pointer' }}
-        >
+        <Button onClick={() => speak('Gate D is calm. Take the lift to your left. Your section is three minutes away.')}>
           🔊 Read a sample route aloud
-        </button>
+        </Button>
         {spoke !== undefined && (
           <p role="status" style={{ color: 'var(--text-dim)' }}>
             {spoke}

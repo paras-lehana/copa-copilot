@@ -14,16 +14,16 @@ export interface GoogleService {
   readonly status: ServiceStatus;
   /** What it does in Copa Copilot. */
   readonly purpose: string;
-  /** Repo paths a judge can open to verify the claim. */
+  /** Repo paths that back the claim. */
   readonly codePaths: readonly string[];
   /** Environment variable NAMES involved (never values). */
   readonly envVarNames: readonly string[];
   /** What happens with no key/config — every integration degrades gracefully. */
   readonly fallbackMode: string;
-  /** Signals an automated evaluator can check directly. */
+  /** Verifiable signals (endpoints, tests) that back the status. */
   readonly evidenceSignals: readonly string[];
-  /** One-line proof points for human judges. */
-  readonly judgeProofPoints: readonly string[];
+  /** One-line proof points anyone can check. */
+  readonly proofPoints: readonly string[];
 }
 
 export const GOOGLE_SERVICES: readonly GoogleService[] = [
@@ -38,7 +38,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['LLM_SERVICE_URL', 'LLM_ENDPOINT', 'LLM_MODEL', 'LLM_INTERNAL_KEY'],
     fallbackMode: 'DEMO_MODE deterministic replies computed by the same @copa/core engines.',
     evidenceSignals: ['POST /api/assistant/query answers with tool-grounded data', 'prompt-injection suite in tests'],
-    judgeProofPoints: ['Ask the assistant for a wheelchair route — the reply quotes live engine densities.'],
+    proofPoints: ['Ask the assistant for a wheelchair route — the reply quotes live engine densities.'],
   },
   {
     id: 'cloud-run',
@@ -50,7 +50,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['PORT'],
     fallbackMode: 'Local dev servers (npm run dev) — identical behaviour.',
     evidenceSignals: ['Live URLs in README respond', '/api/meta returns the tagged version'],
-    judgeProofPoints: ['curl the live /api/meta — version matches the README blockquote and git tag.'],
+    proofPoints: ['curl the live /api/meta — version matches the README blockquote and git tag.'],
   },
   {
     id: 'cloud-build',
@@ -62,7 +62,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'Local docker build with the same Dockerfiles.',
     evidenceSignals: ['cloudbuild YAML at repo root'],
-    judgeProofPoints: ['One-command deploy script drives Cloud Build end to end.'],
+    proofPoints: ['One-command deploy script drives Cloud Build end to end.'],
   },
   {
     id: 'artifact-registry',
@@ -74,7 +74,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'Local image cache.',
     evidenceSignals: ['image tags reference <region>-docker.pkg.dev'],
-    judgeProofPoints: ['cloudbuild files push to the copa-copilot Artifact Registry repo.'],
+    proofPoints: ['cloudbuild files push to the copa-copilot Artifact Registry repo.'],
   },
   {
     id: 'cloud-logging',
@@ -86,7 +86,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'Same structured lines to stdout locally.',
     evidenceSignals: ['logger tests assert redaction (no user text, no upstream bodies, no env values)'],
-    judgeProofPoints: ['Logger middleware emits Cloud-Logging-shaped JSON with a PII-redaction contract.'],
+    proofPoints: ['Logger middleware emits Cloud-Logging-shaped JSON with a PII-redaction contract.'],
   },
   {
     id: 'secret-manager',
@@ -97,8 +97,8 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     codePaths: ['scripts/deploy.ps1', 'SECURITY.md'],
     envVarNames: ['LLM_INTERNAL_KEY'],
     fallbackMode: 'Local gitignored .env (never committed).',
-    evidenceSignals: ['deploy script creates/rotates the gemini-api-key secret', 'no key material in repo'],
-    judgeProofPoints: ['The key never enters an image, the repo, or viewer-visible env config.'],
+    evidenceSignals: ['deploy script creates/rotates the llm-internal-key secret', 'no key material in repo'],
+    proofPoints: ['The key never enters an image, the repo, or viewer-visible env config.'],
   },
   {
     id: 'maps-js',
@@ -110,7 +110,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['NEXT_PUBLIC_MAPS_API_KEY'],
     fallbackMode: 'Text directions panel from the venue transit registry.',
     evidenceSignals: ['typed wrapper renders fallback panel when the key is absent'],
-    judgeProofPoints: ['Add a Maps key and the perimeter widget lights up; without one the UX still works.'],
+    proofPoints: ['Add a Maps key and the perimeter widget lights up; without one the UX still works.'],
   },
   {
     id: 'routes-api',
@@ -122,7 +122,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['MAPS_API_KEY'],
     fallbackMode: 'Deterministic estimates from the venue transit registry.',
     evidenceSignals: ['injectable fetchFn wrapper + fallback tests'],
-    judgeProofPoints: ['maps-client has the full request shape wired; only the key is absent.'],
+    proofPoints: ['maps-client has the full request shape wired; only the key is absent.'],
   },
   {
     id: 'cloud-translation',
@@ -134,7 +134,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['TRANSLATION_API_KEY'],
     fallbackMode: 'Six-language typed string catalog + Gemini in-conversation translation.',
     evidenceSignals: ['language registry with honest browserTtsCommon flags'],
-    judgeProofPoints: ['Assistant already answers in 6 languages including RTL Arabic without the API.'],
+    proofPoints: ['Assistant already answers in 6 languages including RTL Arabic without the API.'],
   },
   {
     id: 'cloud-tts',
@@ -146,7 +146,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['TTS_API_KEY'],
     fallbackMode: 'Browser speechSynthesis where available — the UI shows which engine is speaking.',
     evidenceSignals: ['honesty rule: fallback state exposed, never faked'],
-    judgeProofPoints: ['Audio-first tier caps sentences at 12 words — tested in the prompt suite.'],
+    proofPoints: ['Audio-first tier caps sentences at 12 words — tested in the prompt suite.'],
   },
   {
     id: 'firebase-auth',
@@ -158,7 +158,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'Anonymous local profiles — no PII by design for the demo.',
     evidenceSignals: ['UserStore interface is auth-ready (userId-keyed)'],
-    judgeProofPoints: ['Privacy-by-design demo: no PII collected, biometric-free.'],
+    proofPoints: ['Privacy-by-design demo: no PII collected, biometric-free.'],
   },
   {
     id: 'firestore',
@@ -170,7 +170,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'In-memory store with pagination-shaped call sites (drop-in swap).',
     evidenceSignals: ['store contract tests runnable against any implementation'],
-    judgeProofPoints: ['Swap = one adapter file; zero route changes (interface documented).'],
+    proofPoints: ['Swap = one adapter file; zero route changes (interface documented).'],
   },
   {
     id: 'ga4',
@@ -182,7 +182,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: ['NEXT_PUBLIC_GA4_ID'],
     fallbackMode: 'No-op when the id is absent.',
     evidenceSignals: ['gtag bootstrap gated on the env id'],
-    judgeProofPoints: ['Zero-cost, zero-PII usage metrics one env var away.'],
+    proofPoints: ['Zero-cost, zero-PII usage metrics one env var away.'],
   },
   {
     id: 'bigquery',
@@ -194,7 +194,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'Deterministic simulateWindow() series replayable on demand.',
     evidenceSignals: ['data-flow diagram names the export path'],
-    judgeProofPoints: ['Simulation series are already table-shaped for a BigQuery sink.'],
+    proofPoints: ['Simulation series are already table-shaped for a BigQuery sink.'],
   },
   {
     id: 'pubsub',
@@ -206,7 +206,7 @@ export const GOOGLE_SERVICES: readonly GoogleService[] = [
     envVarNames: [],
     fallbackMode: 'Seeded simulation stream over SSE.',
     evidenceSignals: ['SSE stream endpoint mirrors the eventual subscriber shape'],
-    judgeProofPoints: ['The engine consumes snapshots — a Pub/Sub subscriber slots in front unchanged.'],
+    proofPoints: ['The engine consumes snapshots — a Pub/Sub subscriber slots in front unchanged.'],
   },
 ];
 

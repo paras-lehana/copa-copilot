@@ -19,11 +19,11 @@ describe('catalog shape', () => {
 
 describe('honesty invariants (M29)', () => {
   it.each(GOOGLE_SERVICES.map((s) => [s.id, s] as const))(
-    '%s: every service has purpose, evidence and judge proof',
+    '%s: every service has purpose, evidence and proof points',
     (_id, service) => {
       expect(service.purpose.length).toBeGreaterThan(15);
       expect(service.evidenceSignals.length).toBeGreaterThan(0);
-      expect(service.judgeProofPoints.length).toBeGreaterThan(0);
+      expect(service.proofPoints.length).toBeGreaterThan(0);
       expect(service.fallbackMode.length).toBeGreaterThan(10);
     },
   );

@@ -9,13 +9,14 @@ import { crowdResponseSchema, incidentCreatedSchema, incidentsResponseSchema } f
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { Button, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { VOLUNTEER_VIEW } from '../../lib/scenarios';
 import { incidentReportSchema } from '@copa/core';
 
 export default function VolunteerPage() {
   const session = useSession();
   const crowd = useApi(
-    `/api/crowd/${session.venueId}?scenario=gate-bottleneck&minute=-20`,
+    `/api/crowd/${session.venueId}?scenario=${VOLUNTEER_VIEW.scenario}&minute=${VOLUNTEER_VIEW.minute}`,
     crowdResponseSchema,
     [session.venueId],
   );
@@ -34,7 +35,7 @@ export default function VolunteerPage() {
       category: 'crowd' as const,
       severity: 'high' as const,
       summary: report.slice(0, 240),
-      minute: -20,
+      minute: VOLUNTEER_VIEW.minute,
     };
     const parsed = incidentReportSchema.safeParse(draft);
     if (!parsed.success) {
@@ -103,12 +104,9 @@ export default function VolunteerPage() {
             {error}
           </p>
         )}
-        <button
-          onClick={() => void submitReport()}
-          style={{ minHeight: 44, padding: '10px 18px', borderRadius: 10, background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
-        >
+        <Button onClick={() => void submitReport()} className="mt-2">
           File report
-        </button>
+        </Button>
         {submitted !== undefined && (
           <p role="status" style={{ color: 'var(--ok)', fontWeight: 600 }}>
             {submitted}

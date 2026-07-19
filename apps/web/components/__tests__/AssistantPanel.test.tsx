@@ -84,4 +84,19 @@ describe('AssistantPanel', () => {
     // Default persona is fan.
     expect(screen.getByRole('button', { name: /safest route to my seat/i })).toBeInTheDocument();
   });
+
+  it('is a modal dialog (aria-modal) and closes on Escape', async () => {
+    stubReply({});
+    const onClose = vi.fn();
+    render(
+      <SessionProvider>
+        <AssistantPanel isOpen onClose={onClose} />
+      </SessionProvider>,
+    );
+    const dialog = screen.getByRole('dialog', { name: /copa copilot assistant/i });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    const user = userEvent.setup();
+    await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledOnce();
+  });
 });

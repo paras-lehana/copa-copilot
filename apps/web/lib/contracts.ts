@@ -252,7 +252,7 @@ export const googleServicesResponseSchema = z.object({
       envVarNames: z.array(z.string()),
       fallbackMode: z.string(),
       evidenceSignals: z.array(z.string()),
-      judgeProofPoints: z.array(z.string()),
+      proofPoints: z.array(z.string()),
     }),
   ),
   runtime: z.object({ geminiKeyPresent: z.boolean(), region: z.string() }),

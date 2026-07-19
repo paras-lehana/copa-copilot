@@ -8,12 +8,13 @@ import { briefingResponseSchema, crowdResponseSchema, incidentsResponseSchema } 
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { DensityMeter, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { Button, DensityMeter, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { OPS_VIEW } from '../../lib/scenarios';
 
 export default function OpsPage() {
   const session = useSession();
   const crowd = useApi(
-    `/api/crowd/${session.venueId}?scenario=gate-bottleneck&minute=-30`,
+    `/api/crowd/${session.venueId}?scenario=${OPS_VIEW.scenario}&minute=${OPS_VIEW.minute}`,
     crowdResponseSchema,
     [session.venueId],
   );
@@ -28,7 +29,7 @@ export default function OpsPage() {
     setBriefingBusy(true);
     const result = await apiPost(
       '/api/ops/briefing',
-      { venueId: session.venueId, scenario: 'gate-bottleneck', minute: -30, windowMinutes: 15 },
+      { venueId: session.venueId, scenario: OPS_VIEW.scenario, minute: OPS_VIEW.minute, windowMinutes: 15 },
       briefingResponseSchema,
     );
     if (result.ok) setBriefing(result.value.briefing);
@@ -69,14 +70,9 @@ export default function OpsPage() {
         <h2 id="brief-h" style={{ marginTop: 0 }}>
           AI Operations Briefing
         </h2>
-        <button
-          onClick={() => void runBriefing()}
-          disabled={briefingBusy}
-          aria-disabled={briefingBusy}
-          style={{ minHeight: 44, padding: '10px 18px', borderRadius: 10, background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: 'pointer' }}
-        >
+        <Button onClick={() => void runBriefing()} disabled={briefingBusy} aria-disabled={briefingBusy}>
           {briefingBusy ? 'Generating…' : 'Generate briefing'}
-        </button>
+        </Button>
         {briefing !== undefined && (
           <div role="status" style={{ marginTop: 12 }}>
             <p style={{ fontWeight: 700, marginBottom: 8 }}>

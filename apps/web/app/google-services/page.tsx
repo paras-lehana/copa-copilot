@@ -1,8 +1,8 @@
 'use client';
 
-// google-services/page.tsx — the judge-facing evidence page. Renders the live
-// catalog from /api/google/services: a scorecard header, the no-secrets attestation,
-// and per-service cards with status, purpose, code paths and proof points.
+// google-services/page.tsx — the live evidence page. Renders the catalog from
+// /api/google/services: a scorecard header, the no-secrets attestation, and
+// per-service cards with status, purpose, code paths and proof points.
 
 import { googleServicesResponseSchema } from '../../lib/contracts';
 import { useApi } from '../../lib/use-api';
@@ -77,7 +77,7 @@ export default function GoogleServicesPage() {
                         <strong>Fallback:</strong> {s.fallbackMode}
                       </p>
                       <p style={{ margin: '4px 0', fontSize: 13 }}>
-                        <strong>Proof:</strong> {s.judgeProofPoints.join(' ')}
+                        <strong>Proof:</strong> {s.proofPoints.join(' ')}
                       </p>
                       <p style={{ margin: '4px 0', fontSize: 12, color: 'var(--text-dim)' }}>
                         <code>{s.codePaths.join(' · ')}</code>

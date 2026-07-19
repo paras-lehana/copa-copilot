@@ -5,7 +5,7 @@
 // immediately. Bootstraps an anonymous (no-PII) profile via the API.
 
 import { useState } from 'react';
-import { SUPPORTED_LANGUAGES, type LanguageCode } from '@copa/core';
+import { SUPPORTED_LANGUAGES, resolveLanguage } from '@copa/core';
 import { profileSchema, venuesResponseSchema } from '../../lib/contracts';
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
@@ -105,7 +105,7 @@ export default function OnboardingPage() {
         <h2 id="l-h" style={{ marginTop: 0 }}>3. Language</h2>
         <select
           value={session.language}
-          onChange={(e) => session.update({ language: e.target.value as LanguageCode })}
+          onChange={(e) => session.update({ language: resolveLanguage(e.target.value) })}
           aria-label="Language"
           style={fieldStyle}
         >

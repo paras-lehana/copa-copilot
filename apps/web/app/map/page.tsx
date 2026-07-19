@@ -9,7 +9,8 @@ import { crowdResponseSchema, routeResponseSchema } from '../../lib/contracts';
 import { apiPost } from '../../lib/api-client';
 import { useApi } from '../../lib/use-api';
 import { useSession } from '../../lib/session';
-import { DensityMeter, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { Button, DensityMeter, RetryCard, Skeleton, StatusPill } from '../../components/ui';
+import { CALM_VIEW } from '../../lib/scenarios';
 
 const STATUS_FILL: Record<string, string> = {
   comfortable: 'var(--ok)',
@@ -20,7 +21,7 @@ const STATUS_FILL: Record<string, string> = {
 export default function MapPage() {
   const session = useSession();
   const crowd = useApi(
-    `/api/crowd/${session.venueId}?scenario=normal&minute=30`,
+    `/api/crowd/${session.venueId}?scenario=${CALM_VIEW.scenario}&minute=${CALM_VIEW.minute}`,
     crowdResponseSchema,
     [session.venueId],
   );
@@ -112,12 +113,7 @@ export default function MapPage() {
         <h2 id="route-h" style={{ marginTop: 0 }}>
           Route to my seat
         </h2>
-        <button
-          onClick={() => void computeRoute()}
-          style={{ minHeight: 44, padding: '10px 18px', borderRadius: 10, background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 600, cursor: 'pointer' }}
-        >
-          Compute {session.accessibility} route
-        </button>
+        <Button onClick={() => void computeRoute()}>Compute {session.accessibility} route</Button>
         {routeError !== undefined && (
           <p role="alert" style={{ color: 'var(--danger)' }}>
             {routeError}

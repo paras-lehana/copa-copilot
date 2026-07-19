@@ -6,6 +6,7 @@
 
 import { useRef, useState } from 'react';
 import { assistantResponseSchema } from '../../lib/contracts';
+import { ASSISTANT_MINUTE, FAN_VIEW } from '../../lib/scenarios';
 import { apiPost } from '../../lib/api-client';
 import { useSession } from '../../lib/session';
 import { catalog } from '../../lib/strings';
@@ -49,8 +50,8 @@ export default function AssistantPage() {
         venueId: session.venueId,
         persona: session.persona,
         language: session.language,
-        scenario: 'egress-surge',
-        minute: 100,
+        scenario: FAN_VIEW.scenario,
+        minute: ASSISTANT_MINUTE,
       },
       assistantResponseSchema,
     );

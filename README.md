@@ -2,7 +2,7 @@
 
 ![license: MIT](https://img.shields.io/badge/license-MIT-informational)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)
-![tests: 1567 passing](https://img.shields.io/badge/tests-1567%20passing-brightgreen)
+![tests: 1568 passing](https://img.shields.io/badge/tests-1568%20passing-brightgreen)
 ![core coverage: 99%](https://img.shields.io/badge/core%20coverage-99%25-brightgreen)
 
 > **Version 0.2.0** — a GenAI operations & fan copilot spanning all 16 World Cup 2026 venues, grounded in a deterministic stadium engine and built for the Hack2skill × Google PromptWars "Smart Stadiums & Tournament Operations" challenge.
@@ -57,7 +57,7 @@ The June–July 2026 tournament exposed operational gaps that are documented, no
 | **Weather-protocol engine** | 8-mile lightning rule + heat tiers → per-persona actions | (core engine) |
 | **Entry-readiness checklist** | Anti-ghost-ticket guidance (no real ticket APIs — guidance only) | (core engine) |
 | **Operational gamification** | Missions (Beat the Rush, Green Footprint, Smart Exit) with engine-computed points + leaderboards | Firestore (planned) |
-| **Evidence page** | `/google-services` renders the live service catalog for judges | Cloud Run |
+| **Evidence page** | `/google-services` renders the live, self-attesting service catalog | Cloud Run |
 
 Covers all eight challenge dimensions (navigation, crowd management, accessibility, transportation, sustainability, multilingual assistance, operational intelligence, real-time decision support) and all four personas.
 
@@ -66,7 +66,7 @@ Covers all eight challenge dimensions (navigation, crowd management, accessibili
 | Rubric axis | Evidence |
 |---|---|
 | **Code Quality** | TypeScript strict everywhere (`noUncheckedIndexedAccess`), zero `any` / `console.log` / `TODO` / `eslint-disable`, ESLint flat config over every workspace, `Result<T,AppError>` channel, one shared zod schema source. See [EVALUATION_MAPPING.md](EVALUATION_MAPPING.md). |
-| **Testing** | **1,515 tests** (1,333 core unit + 141 API integration + 41 web component) at **99.4% core statement coverage** (API 92%), plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
+| **Testing** | **1,516 tests** (1,333 core unit + 141 API integration + 42 web component) at **99.4% core statement coverage** (API 92%), plus **52 Playwright e2e + axe** runs. Coverage gated in CI. See [TESTING.md](TESTING.md). |
 | **AI evals** | An **evaluation harness for the assistant itself** — 100% grounded-faithfulness (no invented numbers), 100% adversarial-refusal recall, 100% localisation — gated in CI. See [EVALS.md](EVALS.md). |
 | **Security** | AI routed only through the llm-service proxy (never a direct provider call); zod `.strict()` validation, token-bucket rate limits, prompt-injection nonce boundary, PII-safe structured logs, Secret Manager key by reference, no CSP-with-`unsafe-inline`. See [SECURITY.md](SECURITY.md). |
 | **Accessibility** | axe-clean on **all 10 routes in light AND dark**, WCAG 2.1 AA, ARIA meters, keyboard-complete, RTL Arabic, theme-aware contrast. See [ACCESSIBILITY.md](ACCESSIBILITY.md). |

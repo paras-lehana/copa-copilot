@@ -45,7 +45,7 @@ AI inference is routed through an **llm-service proxy** reaching **Gemini `gemin
 
 ## Engineering standard
 
-TypeScript strict everywhere; a `Result<T, AppError>` channel so the core never throws across boundaries; one shared zod schema source for API and web; ESLint over every workspace; a grep-census that keeps the tree free of `any`/`console.log`/`TODO`/`eslint-disable`. **1,515 unit/integration/component tests** (99.4% core coverage) plus **52 Playwright + axe** runs — accessibility verified on all 10 routes in **light and dark** (WCAG 2.1 AA, ARIA meters, keyboard-complete, RTL Arabic). It all runs with **zero API keys** in demo mode.
+TypeScript strict everywhere; a `Result<T, AppError>` channel so the core never throws across boundaries; one shared zod schema source for API and web; ESLint over every workspace; a grep-census that keeps the tree free of `any`/`console.log`/`TODO`/`eslint-disable`. **1,516 unit/integration/component tests** (99.4% core coverage) plus **52 Playwright + axe** runs — accessibility verified on all 10 routes in **light and dark** (WCAG 2.1 AA, ARIA meters, keyboard-complete, RTL Arabic). It all runs with **zero API keys** in demo mode.
 
 ## Try it in 30 seconds
 

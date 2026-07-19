@@ -7,6 +7,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { assistantResponseSchema } from '../lib/contracts';
+import { ASSISTANT_MINUTE, FAN_VIEW } from '../lib/scenarios';
 import { apiPost } from '../lib/api-client';
 import { useSession } from '../lib/session';
 import { catalog } from '../lib/strings';
@@ -37,14 +38,46 @@ export function AssistantPanel({ isOpen, onClose }: { isOpen: boolean; onClose: 
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const openerRef = useRef<Element | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [turns, busy]);
 
+  // Modal focus management: capture the opener, move focus in, restore it on close.
   useEffect(() => {
-    if (isOpen) inputRef.current?.focus();
+    if (isOpen) {
+      openerRef.current = document.activeElement;
+      inputRef.current?.focus();
+    } else if (openerRef.current instanceof HTMLElement) {
+      openerRef.current.focus();
+      openerRef.current = null;
+    }
   }, [isOpen]);
+
+  // Escape closes the dialog; Tab is trapped inside it (a real modal).
+  function onKeyDown(e: React.KeyboardEvent<HTMLElement>): void {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+    if (e.key !== 'Tab' || dialogRef.current === null) return;
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (first === undefined || last === undefined) return;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   const ask = useCallback(
     async (message: string) => {
@@ -59,8 +92,8 @@ export function AssistantPanel({ isOpen, onClose }: { isOpen: boolean; onClose: 
           venueId: session.venueId,
           persona: session.persona,
           language: session.language,
-          scenario: 'egress-surge',
-          minute: 100,
+          scenario: FAN_VIEW.scenario,
+          minute: ASSISTANT_MINUTE,
         },
         assistantResponseSchema,
       );
@@ -92,12 +125,15 @@ export function AssistantPanel({ isOpen, onClose }: { isOpen: boolean; onClose: 
             aria-hidden="true"
           />
           <motion.aside
+            ref={dialogRef}
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             role="dialog"
+            aria-modal="true"
             aria-label="Copa Copilot assistant"
+            onKeyDown={onKeyDown}
             className="fixed end-0 top-0 h-full w-full max-w-md z-[101] flex flex-col border-s border-[var(--surface-edge)] bg-[var(--bg-1)]"
           >
             <div className="flex items-center justify-between p-4 border-b border-[var(--surface-edge)]">

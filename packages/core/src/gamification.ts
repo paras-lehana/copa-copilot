@@ -1,8 +1,8 @@
 // gamification.ts — operational missions, the single source of point math, levels.
 // Boundary: every mission binds to an ENGINE metric (crowd, egress, entry,
 // sustainability) so points always trace to a computed operational outcome. UI and
-// assistant strings must call pointsForCo2/pointsForCongestionAvoided — a hardcoded
-// figure that contradicts the engine is a known scoring regression.
+// assistant strings must call pointsForCo2/pointsForCongestionAvoided so a displayed
+// figure can never drift from the engine that produced it.
 
 import { phaseForMinute } from './crowd';
 import { type AppError, appError } from './errors';

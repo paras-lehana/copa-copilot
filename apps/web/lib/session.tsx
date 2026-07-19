@@ -14,6 +14,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { z } from 'zod';
 import { type LanguageCode, resolveLanguage } from '@copa/core';
 import { type Profile } from './contracts';
 
@@ -53,14 +54,30 @@ const DEFAULT_STATE: SessionState = {
 const STORAGE_KEY = 'copa-session';
 const SessionContext = createContext<SessionContextValue | undefined>(undefined);
 
-/** Parse stored session defensively — a corrupt blob resets to defaults, never throws. */
-function readStored(): Partial<SessionState> {
+/** Runtime shape of the persisted session — every field optional and validated, so a
+ *  corrupt or tampered blob is coerced to a safe partial rather than cast blindly. */
+const storedSessionSchema = z
+  .object({
+    venueId: z.string(),
+    sectionZoneId: z.string(),
+    persona: z.enum(['fan', 'volunteer', 'organizer', 'staff']),
+    language: z.string(),
+    accessibility: z.enum(['none', 'wheelchair', 'low-vision', 'sensory-sensitive']),
+    displayName: z.string(),
+    onboarded: z.boolean(),
+  })
+  .partial();
+
+type StoredSession = z.infer<typeof storedSessionSchema>;
+
+/** Parse stored session defensively — a corrupt blob resets to defaults, never throws.
+ *  `language` stays a raw string here; the provider re-narrows it via resolveLanguage. */
+function readStored(): StoredSession {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === null) return {};
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed === null) return {};
-    return parsed as Partial<SessionState>;
+    const parsed = storedSessionSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : {};
   } catch {
     return {};
   }

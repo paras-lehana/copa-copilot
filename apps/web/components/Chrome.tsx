@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { SUPPORTED_LANGUAGES, type LanguageCode, languageInfo } from '@copa/core';
+import { SUPPORTED_LANGUAGES, languageInfo, resolveLanguage } from '@copa/core';
 import { useSession } from '../lib/session';
 import { catalog } from '../lib/strings';
 import { type Theme, applyTheme, readTheme } from '../lib/theme';
@@ -76,7 +76,7 @@ export function Chrome({ children }: { children: ReactNode }): ReactNode {
           <select
             id="lang-select"
             value={session.language}
-            onChange={(e) => session.update({ language: e.target.value as LanguageCode })}
+            onChange={(e) => session.update({ language: resolveLanguage(e.target.value) })}
             aria-label={strings.chooseLanguage}
             className="min-h-[40px] rounded-lg px-2 py-1 bg-[var(--surface-solid)] text-[var(--text)] border border-[var(--surface-edge)] text-sm"
           >

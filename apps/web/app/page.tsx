@@ -6,32 +6,41 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { crowdResponseSchema, egressResponseSchema, weatherResponseSchema } from '../lib/contracts';
 import { apiPost } from '../lib/api-client';
 import { useApi } from '../lib/use-api';
 import { useSession } from '../lib/session';
 import { catalog } from '../lib/strings';
-import { DensityMeter, RetryCard, SectionTitle, Skeleton, StatusPill } from '../components/ui';
+import { Button, DensityMeter, RetryCard, SectionTitle, Skeleton, StatusPill } from '../components/ui';
+import { FAN_VIEW, WEATHER_PRESET } from '../lib/scenarios';
 
-const fade = (i: number) => ({
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' as const },
-});
+/** Staggered entrance — but a no-op under prefers-reduced-motion, so those users
+ *  (and assistive-tech snapshots) get the final, static, full-contrast layout. */
+function makeFade(reduce: boolean) {
+  return (i: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 18 },
+          animate: { opacity: 1, y: 0 },
+          transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' as const },
+        };
+}
 
 export default function DashboardPage() {
   const session = useSession();
   const strings = catalog(session.language);
-  const [minute, setMinute] = useState(80);
+  const fade = makeFade(useReducedMotion() ?? false);
+  const [minute, setMinute] = useState(FAN_VIEW.minute);
 
   const crowd = useApi(
-    `/api/crowd/${session.venueId}?scenario=egress-surge&minute=${minute}`,
+    `/api/crowd/${session.venueId}?scenario=${FAN_VIEW.scenario}&minute=${minute}`,
     crowdResponseSchema,
     [session.venueId, minute],
   );
   const weather = useApi(
-    `/api/weather/${session.venueId}?preset=heat-dome&minute=${minute}`,
+    `/api/weather/${session.venueId}?preset=${WEATHER_PRESET}&minute=${minute}`,
     weatherResponseSchema,
     [session.venueId, minute],
   );
@@ -169,14 +178,9 @@ export default function DashboardPage() {
             Beat the post-match rush — leave at the smartest minute, not with the whole crowd.
           </p>
           {exit === undefined ? (
-            <button
-              onClick={() => void loadExit()}
-              disabled={exitBusy}
-              aria-disabled={exitBusy}
-              className="min-h-[44px] px-[18px] py-2.5 rounded-xl bg-[var(--primary)] text-[var(--on-primary)] font-semibold border-0 cursor-pointer disabled:opacity-50"
-            >
+            <Button onClick={() => void loadExit()} disabled={exitBusy} aria-disabled={exitBusy}>
               {exitBusy ? 'Checking…' : 'Get my exit advice'}
-            </button>
+            </Button>
           ) : (
             <div role="status">
               <p className="font-semibold m-0">{exit.text}</p>

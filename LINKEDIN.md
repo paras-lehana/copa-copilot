@@ -14,7 +14,7 @@ So I built one. What makes it different:
 
 ✅ **It tests its own AI.** An evaluation harness scores the assistant on faithfulness, refusal recall, and localisation — 100%, gated in CI. It caught a real grounding bug on its first run and now prevents it forever.
 
-🔒 **Engineered to a bar.** 1,515 tests (99.4% core coverage) + 52 Playwright/axe runs, accessibility on every route in light AND dark, WCAG 2.1 AA, 6 languages incl. RTL Arabic. Zero API keys needed to run it.
+🔒 **Engineered to a bar.** 1,516 tests (99.4% core coverage) + 52 Playwright/axe runs, accessibility on every route in light AND dark, WCAG 2.1 AA, 6 languages incl. RTL Arabic. Zero API keys needed to run it.
 
 ☁️ **Google-native.** Gemini via a secure llm-service proxy, Cloud Run, Cloud Build, Artifact Registry, Secret Manager, Cloud Logging — with an evidence-as-code service catalog served live at `/google-services`.
 
